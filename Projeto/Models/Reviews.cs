@@ -15,6 +15,8 @@ namespace Projeto.Models
 
         public String Description { get; set; }
 
+        public String Image { get; set; }
+
         public int Rating { get; set;}
 
         public Boolean IsShared { get; set; }
