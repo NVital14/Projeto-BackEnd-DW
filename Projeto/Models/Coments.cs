@@ -6,20 +6,21 @@ namespace Projeto.Models
     public class Coments
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ComentId { get; set; }
 
         public String Coment { get; set; }
 
         //relacionamento 1-N
-        [ForeignKey(nameof(UserIdFK))]
+        [ForeignKey(nameof(UserId))]
+        public Utilizadores UserIdFK { get; set; }
         public int UserId { get; set; }
 
-        public Users UserIdFK { get; set; }
-
-        [ForeignKey(nameof(ReviewIdFK))]
+        [ForeignKey(nameof(ReviewId))]
+        public Reviews ReviewIdFK { get; set; }
         public int ReviewId { get; set; }
 
-        public Reviews ReviewIdFK { get; set; }
+        
 
     }
 }

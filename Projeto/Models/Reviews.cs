@@ -6,9 +6,11 @@ namespace Projeto.Models
     public class Reviews
     {
         public Reviews() {
-            Users = new HashSet<Users>();
+            Users = new HashSet<Utilizadores>();
+            Coments = new HashSet<Coments>();
         }
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ReviewId { get; set; }
 
         public String Title { get; set; }
@@ -22,12 +24,19 @@ namespace Projeto.Models
         public Boolean IsShared { get; set; }
 
         //relacionamento 1-N
-        [ForeignKey(nameof(CategoryFK))]
-        public int Category { get; set; }
+        [ForeignKey(nameof(Category))]
 
         public Categories CategoryFK { get; set; }
+        public int Category { get; set; }
+
+        // relacionamento 1-N
+
+        /// <summary>
+        /// lista de comentarios do utilizador
+        /// </summary>
+        public ICollection<Coments> Coments { get; set; }
 
         // relacionamento N-M, com atributos no relacionamento
-        public ICollection<Users> Users { get; set; }
+        public ICollection<Utilizadores> Users { get; set; }
     }
 }
