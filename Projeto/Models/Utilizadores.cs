@@ -12,10 +12,24 @@ namespace Projeto.Models
             Coments = new HashSet<Coments>();
 
         }
+
+        /// <summary>
+        /// Id do utilizador na tabela Utilizadores
+        /// </summary>
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int UserId { get; set; }
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Nome do Utilizador
+        /// </summary>
         public string UserName { get; set; }
+
+        /// <summary>
+        /// atributo para funcionar como FK entre a tabela dos Utilizadores
+        /// e a tabela da Autenticação
+        /// </summary>
+        public int UserId { get; set; }
 
         // relacionamento 1-N
 
