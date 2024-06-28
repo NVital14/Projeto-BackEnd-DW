@@ -1,0 +1,64 @@
+﻿@model Projeto.Models.Categories
+
+@{
+    ViewData["Title"] = "Edit";
+}
+<head>
+    <link rel="stylesheet" href=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css>
+
+</head>
+<style>
+
+    h1 {
+        font-family: Brush Script MT;
+        font-size: 50px;
+        color: #8EAADB;
+    }
+
+    .primaryBtn {
+        padding: 10px;
+        text-align: center;
+        margin: 4px 2px;
+        border-radius: 8px;
+        color: #ffffff;
+        background-color: #b4c7e7;
+        border-color: #b4c7e7;
+    }
+
+
+    .textA {
+        color: #858282;
+        text-decoration: none;
+    }
+</style>
+<h1>Editar</h1>
+
+<h4>Categoria</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="CategoryId" />
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <br />
+            <div class="form-group">
+                <input type="submit" value="Guardar" class="primaryBtn" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<br />
+
+<div>
+    <button class="btn btn-outline-secondary" onclick="window.location.href='@Url.Action("Index")'"><i class="fa fa-arrow-left"></i> Voltar à lista</button>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

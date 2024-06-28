@@ -1,0 +1,81 @@
+﻿@model IEnumerable<Projeto.Models.Reviews>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Title)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Image)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Rating)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CategoryFK)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Description)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsShared)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Title)
+            </td>
+            <td>
+                @* @Html.DisplayFor(modelItem => item.Image) *@
+                    @if(item.Image != null)
+                    {
+                        
+                    <img src="~/Imagens/@Html.DisplayFor(modelItem => item.Image)"
+                         title="@Html.DisplayFor(modelItem => item.Title)"
+                         width="75px" />
+                    <br />
+                    }
+
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Rating)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Category.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Description)
+            </td>
+            <td>
+                    @if(item.IsShared == true)
+                    {
+                        <span>Sim</span>
+                    }
+                    else
+                    {
+                        <span>Não</span>
+                    }
+                </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.ReviewId">Editar</a> |
+                <a asp-action="Details" asp-route-id="@item.ReviewId">Detalhes</a> |
+                <a asp-action="Delete" asp-route-id="@item.ReviewId">Eliminar</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

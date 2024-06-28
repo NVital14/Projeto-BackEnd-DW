@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Projeto.Data;
 
@@ -11,9 +12,11 @@ using Projeto.Data;
 namespace Projeto.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240626090738_alteracoes3Reviews")]
+    partial class alteracoes3Reviews
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -292,7 +295,7 @@ namespace Projeto.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReviewId"));
 
-                    b.Property<int>("CategoryFK")
+                    b.Property<int>("Category")
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
@@ -304,9 +307,6 @@ namespace Projeto.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<bool>("IsShared")
-                        .HasColumnType("bit");
-
                     b.Property<int>("Rating")
                         .HasColumnType("int");
 
@@ -317,7 +317,7 @@ namespace Projeto.Data.Migrations
 
                     b.HasKey("ReviewId");
 
-                    b.HasIndex("CategoryFK");
+                    b.HasIndex("Category");
 
                     b.ToTable("Reviews");
                 });
@@ -445,13 +445,13 @@ namespace Projeto.Data.Migrations
 
             modelBuilder.Entity("Projeto.Models.Reviews", b =>
                 {
-                    b.HasOne("Projeto.Models.Categories", "Category")
+                    b.HasOne("Projeto.Models.Categories", "CategoryFK")
                         .WithMany("Reviews")
-                        .HasForeignKey("CategoryFK")
+                        .HasForeignKey("Category")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Category");
+                    b.Navigation("CategoryFK");
                 });
 
             modelBuilder.Entity("ReviewsUtilizadores", b =>
