@@ -4,78 +4,127 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<head>
+    <link rel="stylesheet" href=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css>
+
+</head>
+
+<style>
+
+</style>
+
+<h1>Reviews</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create">Criar nova Review</a>
 </p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Title)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Image)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Rating)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CategoryFK)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Description)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IsShared)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Title)
-            </td>
-            <td>
-                @* @Html.DisplayFor(modelItem => item.Image) *@
-                    @if(item.Image != null)
-                    {
-                        
-                    <img src="~/Imagens/@Html.DisplayFor(modelItem => item.Image)"
-                         title="@Html.DisplayFor(modelItem => item.Title)"
-                         width="75px" />
-                    <br />
-                    }
+<div class="container">
+    <div class="row">
 
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Rating)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Category.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Description)
-            </td>
-            <td>
-                    @if(item.IsShared == true)
+        @{
+            int count = 0;
+            foreach (var item in Model) {
+                if (count != 0 && count % 3 == 0) {
+                    @:</div><div class="row">
+                }
+                <div class="col">
+                    <div class="col-sm">
+            <div class="card border-light mb-3" style="max-width: 18rem; height: 410px;">
+                <div class="card-header"> <b><center>@Html.DisplayFor(modelItem => item.Title)</center></b></div>
+                <div class="card-body">
+                    @if (item.Image != null)
                     {
-                        <span>Sim</span>
+                        <center>
+                        <img src="~/Imagens/@Html.DisplayFor(modelItem => item.Image)"
+                             title="@Html.DisplayFor(modelItem => item.Title)"
+                             width="125px"  max-height="100px"/>
+                        </center>
+                        <br />
                     }
-                    else
+                    <h6>Rating:  @for (int i = 0; i < item.Rating; i++)
+                {
+                    <i class="fa fa-star" aria-hidden="true" style="color: gold;"></i>
+                }
+                @if (item.Rating < 5)
+                {
+                    @for (int i = item.Rating; i < 5; i++)
                     {
-                        <span>Não</span>
+                        <i class="fa fa-star" aria-hidden="true" style="color: lightgrey;"></i>
                     }
-                </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.ReviewId">Editar</a> |
-                <a asp-action="Details" asp-route-id="@item.ReviewId">Detalhes</a> |
-                <a asp-action="Delete" asp-route-id="@item.ReviewId">Eliminar</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+                }
+                    </h6>
+                    <h6>Categoria: @Html.DisplayFor(modelItem => item.Category.Name)</h6>
+                    <h6>
+                        Partilhado:  @if (item.IsShared == true)
+                        {
+                            <span>Sim</span>
+                        }
+                        else
+                        {
+                            <span>Não</span>
+                        }
+                    </h6>
+                  
+                </div>
+                <div class="card-footer bg-transparent border-success" >
+                <center>
+                    @*<button class="btn btn-outline-info" onclick="window.location.href='@Url.Action("Edit", new { id = item.ReviewId })'"><i class="far fa-edit" aria-hidden="true"></i></button>
+                    <button class="btn btn-outline-success" onclick="window.location.href='@Url.Action("Details", new { id = item.ReviewId })'"><i class="fa fa-info-circle" aria-hidden="true"></i></button>
+                    <button class="btn btn-outline-danger" onclick="window.location.href='@Url.Action("Delete", new { id = item.ReviewId })'"> <i class="fa fa-trash" aria-hidden="true"></i></button>+*@
+                    <a asp-action="Edit" asp-route-id="@item.ReviewId"><i class="far fa-edit" aria-hidden="true" style="color: steelblue;"></i></a> |
+                    <a asp-action="Details" asp-route-id="@item.ReviewId"><i class="fa fa-info-circle" aria-hidden="true" style="color: seagreen;"></i></a> |
+                     <a asp-action="Delete" asp-route-id="@item.ReviewId"><i class="fa fa-trash" aria-hidden="true" style="color: red;"></i></a>
+                </center>
+                </div>
+            </div>
+            </div>
+                </div>
+                count++;
+            }
+        }
+@*         
+@foreach (var item in Model) {
+    <div class="col-sm">
+            <div class="card border-light mb-3" style="max-width: 18rem;">
+                <div class="card-header"> <b><center>@Html.DisplayFor(modelItem => item.Title)</center></b></div>
+                <div class="card-body">
+                    @if (item.Image != null)
+                    {
+                        <center>
+                        <img src="~/Imagens/@Html.DisplayFor(modelItem => item.Image)"
+                             title="@Html.DisplayFor(modelItem => item.Title)"
+                             width="125px" />
+                        </center>
+                        <br />
+                    }
+                    <h6>Rating: @for (int i = 0; i < item.Rating; i++)
+                        {
+                            <i class="fa fa-star" aria-hidden="true" style="color: yellow;"></i>
+                        }
+                    </h6>
+                    <h6>Categoria: @Html.DisplayFor(modelItem => item.Category.Name)</h6>
+                    <h6>
+                        Partilhado:  @if (item.IsShared == true)
+                        {
+                            <span>Sim</span>
+                        }
+                        else
+                        {
+                            <span>Não</span>
+                        }
+                    </h6>
+                  
+                </div>
+                <div class="card-footer bg-transparent border-success">
+                    <a asp-action="Edit" asp-route-id="@item.ReviewId">Editar</a> |
+                    <a asp-action="Details" asp-route-id="@item.ReviewId">Detalhes</a> |
+                    <a asp-action="Delete" asp-route-id="@item.ReviewId">Eliminar</a>
+                </div>
+            </div>
+            </div>
+
+           
+} *@
+
+    </div>
+</div>

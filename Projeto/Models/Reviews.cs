@@ -21,7 +21,7 @@ namespace Projeto.Models
         /// <summary>
         /// Título da review
         /// </summary>
-        [StringLength(50, ErrorMessage = "O {0} não pode exceder 50 caracteres.")]
+        [StringLength(30, ErrorMessage = "O {0} não pode exceder 30 caracteres.")]
         [Required(ErrorMessage = "O {0} é de preenchimento obrigatório.")]
         [Display(Name = "Título")]
         public String Title { get; set; }
@@ -29,7 +29,7 @@ namespace Projeto.Models
         /// <summary>
         /// Descrição da review
         /// </summary>
-        [StringLength(3000, ErrorMessage = "O {0} não pode exceder 3000 caracteres.")]
+        [StringLength(5000, ErrorMessage = "O {0} não pode exceder 5000 caracteres.")]
         [Required(ErrorMessage = "O {0} é de preenchimento obrigatório.")]
         [Display(Name = "Descrição")]
         public String Description { get; set; }
@@ -45,7 +45,7 @@ namespace Projeto.Models
         /// Pontuação dada ao objeto alvo da review
         /// </summary>
         [Required(ErrorMessage = "A {0} é de preenchimento obrigatório.")]
-        [Display(Name = "Pontuação")]
+        [Display(Name = "Avaliação")]
         public int Rating { get; set;}
 
         /// <summary>

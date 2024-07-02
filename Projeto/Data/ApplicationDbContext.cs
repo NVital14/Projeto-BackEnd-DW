@@ -10,7 +10,7 @@ namespace Projeto.Data
             : base(options)
         { }
 
-        public DbSet<Utilizadores> Users { get; set; }
+        public DbSet<Utilizadores> Utilizadores { get; set; }
         public DbSet<Reviews> Reviews { get; set; }
         public DbSet<Favorites> Favorites { get; set; }
         public DbSet<Categories> Categories { get; set; }

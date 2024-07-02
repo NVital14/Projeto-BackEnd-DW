@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Projeto.Data;
 using Projeto.Models;
 
@@ -22,11 +24,17 @@ namespace Projeto.Controllers
         /// </summary>
         private readonly IWebHostEnvironment _webHostEnvironment;
 
+        /// <summary>
+        /// objeto para interagir com os dados da pessoa autenticada
+        /// </summary>
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public ReviewsController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
+
+        public ReviewsController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment, UserManager<IdentityUser> userManager)
         {
             _context = context;
             _webHostEnvironment = webHostEnvironment;
+            _userManager = userManager;
         }
 
         // GET: Reviews
@@ -93,27 +101,66 @@ namespace Projeto.Controllers
         public IActionResult Create()
         {
             ViewData["CategoryFK"] = new SelectList(_context.Categories.OrderBy(c => c.Name), "CategoryId", "Name");
+            //obter a lista de professores existentes na BD
+            ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Title,Description,Rating,IsShared,CategoryFK")] Reviews review, IFormFile? ImageReview)
+        public async Task<IActionResult> Create([Bind("Title,Description,Rating,IsShared,CategoryFK")] Reviews review, IFormFile? ImageReview, String[]userIdsList)
         {
             //verificar se o utilizador selecionou uma categoria
             if(review.CategoryFK == -1)
             {
                 ModelState.AddModelError("", "Deve escolher uma categoria!");
                 ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
+                ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
                 return View(review);
             }
 
-            //verificar que foi introduzido o ratiing
+            //verificar que foi introduzido o rating
             if(review.Rating == 0)
             {
-                ModelState.AddModelError("", "Deve escolher uma categoria !");
+                ModelState.AddModelError("", "Deve escolher a pontuação!");
                 ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
+                ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
                 return View(review);
+            }
+
+            //verificar se houver colaboradores
+            if (!userIdsList.IsNullOrEmpty())
+            {
+                var usersList = new List<Utilizadores>();
+                foreach (var id in userIdsList)
+                {
+                    var user = _context.Utilizadores.FirstOrDefault(u => u.UserId == id);
+                    if (user != null)
+                    {
+                        usersList.Add(user);
+                    }
+
+                    if (userIdsList != null)
+                    {
+                        review.Users = usersList;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Houve um erro a guardar os colaboradores !");
+                        ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
+                        ViewData["UsersList"] =_context.Utilizadores.OrderBy(u => u.UserName).ToList();
+                        return View(review);
+                    }
+                }
+            }
+            //se não houver colaboradores na review, então guarda apenas o userId do utilizador que criou a review
+            else
+            {
+                var userList = new List<Utilizadores>();
+                var currentUserId = _userManager.GetUserId(User);
+                var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+                userList.Add(util);
+                review.Users = userList; 
             }
 
           /* Guardar a imagem no disco rígido do Servidor
@@ -142,6 +189,7 @@ namespace Projeto.Controllers
                     {
                         ModelState.AddModelError("", "Deve fornecer uma imagem!");
                         ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
+                        ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
                         return View(review);
                     }
                     else
@@ -164,6 +212,7 @@ namespace Projeto.Controllers
             }
 
             ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
+            ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
             return View(review);
         }
 
@@ -181,6 +230,7 @@ namespace Projeto.Controllers
                 return NotFound();
             }
             ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", reviews.CategoryFK);
+            ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
             return View(reviews);
         }
 
