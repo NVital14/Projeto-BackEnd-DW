@@ -20,12 +20,13 @@
         font-family: Brush Script MT;
         font-size: 50px;
         color: #8EAADB;
+        margin-top: 30px;
     }
 
     .primaryBtn {
         padding: 10px;
         text-align: center;
-        margin: 4px 2px;
+        margin: 10px 2px;
         border-radius: 8px;
         color: #ffffff;
         background-color: #b4c7e7;
@@ -79,8 +80,8 @@
                     </label>
                 </div>
                 <br />
-                <div class="form-check">
-                    <span>Deseja ter outros utilizadores a colaborar a elaboração desta review?</span>
+                <div style="margin:5px;">
+                    <span style="margin-bottom:5px;">Deseja ter outros utilizadores a colaborar na elaboração desta review?</span>
                     <select class="selectpicker" multiple data-live-search="true" name="userIdsList">
                         @foreach (var u in (List<Utilizadores>)ViewData["UsersList"] ?? Enumerable.Empty<Utilizadores>())
                         {
@@ -92,11 +93,11 @@
                     <input type="submit" value="Guardar" class="primaryBtn" />
                 </div>
             </form>
-<div style="margin-bottom: 20px;">
-    <button class="btn btn-outline-secondary" onclick="window.location.href='@Url.Action("Index")'"><i class="fa fa-arrow-left"></i> Voltar à lista</button>
-</div>
         </div>
     </div>
+</div>
+<div style="margin-bottom: 100px;">
+    <button class="btn btn-outline-secondary"  onclick="window.location.href='@Url.Action("Index")'"><i class="fa fa-arrow-left"></i> Voltar à lista</button>
 </div>
 
 

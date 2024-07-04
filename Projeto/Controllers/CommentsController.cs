@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -58,6 +59,7 @@ namespace Projeto.Controllers
             return View(coments);
         }
 
+        [Authorize]
         // GET: Comments/Create
         public IActionResult Create()
         {

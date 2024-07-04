@@ -32,17 +32,26 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        @if (User.Identity.IsAuthenticated)
+                        @if (User.IsInRole("Admin"))
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Categories" asp-action="Index">Categories</a>
-                        </li>}
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <li>
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Reviews" asp-action="Index">Reviews</a>
+                            <li class="nav-item" style="margin-top=50px">
+                                <a class="nav-link text-light" asp-area="" asp-controller="Categories" asp-action="Index">
+                                    <strong>Categorias</strong>
 
-                        </li>}
+                            </a>
+                                </li>
+                        }
+                        else
+                        {
+                            
+                        }
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item" style="margin-top=50px">
+                                <a class="nav-link text-light" asp-area="" asp-controller="Reviews" asp-action="Index"> <strong>As Minhas Reviews</strong></a>
+
+                        </li>
+                         }
                         @*
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>

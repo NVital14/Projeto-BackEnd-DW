@@ -11,7 +11,7 @@ using Projeto.Models;
 
 namespace Projeto.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class CategoriesController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -78,7 +78,7 @@ namespace Projeto.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
+            [Required(ErrorMessage = "O {0} é de preenchimento obrigatório!")]
             [EmailAddress]
             [Display(Name = "Email")]
             public string Email { get; set; }
@@ -87,10 +87,10 @@ namespace Projeto.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
+            [Required(ErrorMessage = "O {0} é de preenchimento obrigatório!")]
             [StringLength(100, ErrorMessage = "A {0} deve ter pelo menos {2} e no máximo {1} carateres.", MinimumLength = 6)]
             [DataType(DataType.Password)]
-            [Display(Name = "Password")]
+            [Display(Name = "Palavra-passe")]
             public string Password { get; set; }
 
             /// <summary>
@@ -98,7 +98,7 @@ namespace Projeto.Areas.Identity.Pages.Account
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [DataType(DataType.Password)]
-            [Display(Name = "Confirm password")]
+            [Display(Name = "Confirme a palavra-passe")]
             [Compare("Password", ErrorMessage = "As palavras passes não são iguais")]
             public string ConfirmPassword { get; set; }
 
@@ -130,8 +130,7 @@ namespace Projeto.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User created a new account with password.");
-
+                    _logger.LogInformation("Conta criada!");
                     try
                     {
                         // ***********************************
@@ -147,16 +146,10 @@ namespace Projeto.Areas.Identity.Pages.Account
                         await _context.SaveChangesAsync();
                         // ***********************************
                     }
-                    catch (Exception ex)
+                    catch (Exception e)
                     {
-                        // É NECESSÁRIO TRATAR A EXCEÇÃO
-                        // DEFINIR A POLÍTICA, E AÇÕES, A EXECUTAR NESTA SITUAÇÃO
-                        // POR EXEMPLO:
-                        //    - apara o utilizador da tabela da Autenticação
-                        //    - gerar mensagens de erro para a pessoa que está a criar o registo
-                        //    - guardar os dados do Erro num LOG ou na BD
-                        //    - etc.
-                        Console.WriteLine("ERRRRRRRRRRRRO");   
+                        // guardar os dados do Erro num LOG 
+                        _logger.LogInformation(e.ToString());
                         throw;
                     }
 
@@ -169,8 +162,8 @@ namespace Projeto.Areas.Identity.Pages.Account
                         values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
                         protocol: Request.Scheme);
 
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    await _emailSender.SendEmailAsync(Input.Email, "Confirme o seu email",
+                        $"Por favor comfirme a sua conta <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>carregando aqui</a>.");
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {

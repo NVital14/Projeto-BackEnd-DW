@@ -22,12 +22,24 @@ namespace Projeto.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? categoryId)
         {
             ViewData["CategoriesList"] = _context.Categories.AsNoTracking().OrderBy(u => u.Name).ToList();
-            var applicationDbContext = _context.Reviews.Include(r => r.Category).Where(r => r.IsShared == true);
-            var reviews = await applicationDbContext.ToListAsync();
-            return View(reviews);
+
+            if(categoryId == null)
+            {
+                var applicationDbContext = _context.Reviews.Include(r => r.Category).Where(r => r.IsShared == true);
+                var reviews = await applicationDbContext.ToListAsync();
+                return View(reviews);
+            }
+            else
+            {
+                //filtra as reviews por categoria
+                var applicationDbContext = _context.Reviews.Include(r => r.Category).Where(r => r.IsShared == true && r.Category.CategoryId == categoryId);
+                var reviews = await applicationDbContext.ToListAsync();
+                ViewData["SelectedCategoryId"] = categoryId; // Passa o ID da categoria selecionada para a view
+                return View(reviews);
+            }
 
         }
 

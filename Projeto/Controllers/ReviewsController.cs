@@ -49,8 +49,17 @@ namespace Projeto.Controllers
             var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             if (util != null)
             {
-                var applicationDbContext = _context.Reviews.Include(r => r.Category).Where(r => r.Users.Any(u => u.Id == util.Id));
-                return View(await applicationDbContext.ToListAsync());
+                
+                if (User.IsInRole("Admin")){
+                    var applicationDbContext = _context.Reviews.Include(r => r.Category);
+                    return View(await applicationDbContext.ToListAsync());
+                }
+                else
+                {
+                    var applicationDbContext = _context.Reviews.Include(r => r.Category).Where(r => r.Users.Any(u => u.Id == util.Id));
+                    return View(await applicationDbContext.ToListAsync());
+                }
+                
             }
             else
             {
