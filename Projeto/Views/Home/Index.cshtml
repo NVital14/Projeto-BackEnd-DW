@@ -1,8 +1,69 @@
-﻿@{
+﻿@model IEnumerable<Projeto.Models.Reviews> 
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<head>
+    <link rel="stylesheet" href=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css>
+
+</head>
+
+
+<div class="container" style="margin-top:50px;">
+    <div class="row" style="align-content:center;">
+        @foreach (var c in (List<Categories>)ViewData["CategoriesList"] ?? Enumerable.Empty<Categories>())
+                        {
+                            <button type="button" class="btn btn-outline-secondary" style="width:100px;" value="@c.CategoryId">@c.Name</button>
+                        }
+    </div>
+    <div class="row" style="margin-top:50px;">
+
+        @{
+            int count = 0;
+            foreach (var item in Model) {
+                if (count != 0 && count % 3 == 0) {
+                    @:</div><div class="row">
+                }
+                <div class="col">
+                    <div class="col-sm">
+            <div class="card border-light mb-3" style="max-width: 18rem; height: 410px;">
+                <div class="card-header"> <b><center>@Html.DisplayFor(modelItem => item.Title)</center></b></div>
+                <div class="card-body">
+                    @if (item.Image != null)
+                    {
+                        <center>
+                        <img src="~/Imagens/@Html.DisplayFor(modelItem => item.Image)"
+                             title="@Html.DisplayFor(modelItem => item.Title)"
+                             width="125px"  max-height="100px"/>
+                        </center>
+                        <br />
+                    }
+                    <h6>Rating:  @for (int i = 0; i < item.Rating; i++)
+                {
+                    <i class="fa fa-star" aria-hidden="true" style="color: gold;"></i>
+                }
+                @if (item.Rating < 5)
+                {
+                    @for (int i = item.Rating; i < 5; i++)
+                    {
+                        <i class="fa fa-star" aria-hidden="true" style="color: lightgrey;"></i>
+                    }
+                }
+                    </h6>
+                    <h6>Categoria: @Html.DisplayFor(modelItem => item.Category.Name)</h6>
+                  
+                </div>
+                <div class="card-footer bg-transparent border-primary" >
+                <center>
+                    <a asp-controller="Reviews" asp-action="Details" asp-route-id="@item.ReviewId" asp-route-source="homePage" asp-route-id="@item.ReviewId"><i class="fa fa-info-circle" aria-hidden="true" style="color: #8EAADB;"></i></a> 
+                     
+                </center>
+                </div>
+            </div>
+            </div>
+                </div>
+                count++;
+            }
+        }
+    </div>
 </div>

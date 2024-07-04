@@ -84,7 +84,7 @@
                     <select class="selectpicker" multiple data-live-search="true" name="userIdsList">
                         @foreach (var u in (List<Utilizadores>)ViewData["UsersList"] ?? Enumerable.Empty<Utilizadores>())
                         {
-                            <option value="@u.UserId"> @u.UserName</option>
+                            <option value="@u.Id"> @u.UserName</option>
                         }
                     </select>
                 </div>

@@ -7,7 +7,7 @@ namespace Projeto.Models
     {
         public Reviews() {
             Users = new HashSet<Utilizadores>();
-            Coments = new HashSet<Coments>();
+            Comments = new HashSet<Comments>();
             Favorites = new HashSet<Favorites>();
         }
         /// <summary>
@@ -21,7 +21,7 @@ namespace Projeto.Models
         /// <summary>
         /// Título da review
         /// </summary>
-        [StringLength(30, ErrorMessage = "O {0} não pode exceder 30 caracteres.")]
+        [StringLength(50, ErrorMessage = "O {0} não pode exceder 30 caracteres.")]
         [Required(ErrorMessage = "O {0} é de preenchimento obrigatório.")]
         [Display(Name = "Título")]
         public String Title { get; set; }
@@ -70,7 +70,7 @@ namespace Projeto.Models
         /// <summary>
         /// lista de comentarios do utilizador
         /// </summary>
-        public ICollection<Coments> Coments { get; set; }
+        public ICollection<Comments> Comments { get; set; }
 
         /// <summary>
         /// lista de favoritos 

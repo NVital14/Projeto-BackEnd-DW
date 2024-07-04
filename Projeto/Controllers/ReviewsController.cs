@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,6 +13,7 @@ using Projeto.Models;
 
 namespace Projeto.Controllers
 {
+    [Authorize]
     public class ReviewsController : Controller
     {
         /// <summary>
@@ -30,6 +32,8 @@ namespace Projeto.Controllers
         private readonly UserManager<IdentityUser> _userManager;
 
 
+
+
         public ReviewsController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment, UserManager<IdentityUser> userManager)
         {
             _context = context;
@@ -38,19 +42,51 @@ namespace Projeto.Controllers
         }
 
         // GET: Reviews
+        [AllowAnonymous] // uma pessoa sem estar autenticada CONSEGUE aceder
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Reviews.Include(r => r.Category);
-            return View(await applicationDbContext.ToListAsync());
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            if (util != null)
+            {
+                var applicationDbContext = _context.Reviews.Include(r => r.Category).Where(r => r.Users.Any(u => u.Id == util.Id));
+                return View(await applicationDbContext.ToListAsync());
+            }
+            else
+            {
+                // tratar o caso em que o utilizador não é encontrado
+                return NotFound();
+            }
         }
 
         // GET: Reviews/Details/5
-        public async Task<IActionResult> Details(int? id)
+        [AllowAnonymous] 
+        public async Task<IActionResult> Details(int? id, string source)
         {
+            //define o valor da source no ViewBag
+            ViewBag.Source = source;
             if (id == null)
             {
                 return NotFound();
             }
+
+
+            var commentsList = _context.Comments
+                             .Where(c => c.ReviewFK == id)
+                             .Join(_context.Utilizadores,
+                                   c => c.UtilizadorFK, // supondo que Comment tenha uma propriedade UserId que referencia Utilizadores
+                                   u => u.Id,
+                                   (c, u) => new Comments
+                                   {
+                                       CommentId = c.CommentId,
+                                       Comment = c.Comment,
+                                       Utilizador = u
+                                   })
+                             .OrderBy(c => c.CommentId)
+                             .ToList();
+
+            ViewData["CommentsList"] = commentsList;
+
 
             var reviews = await _context.Reviews
                 .Include(r => r.Category)
@@ -101,21 +137,28 @@ namespace Projeto.Controllers
         public IActionResult Create()
         {
             ViewData["CategoryFK"] = new SelectList(_context.Categories.OrderBy(c => c.Name), "CategoryId", "Name");
-            //obter a lista de professores existentes na BD
-            ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
+            //obter a lista de utilizadores existentes na BD, com excessão do utilizador atual
+            var currentUserId = _userManager.GetUserId(User);
+            ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                         .OrderBy(u => u.UserName)
+                                                         .ToList();
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Title,Description,Rating,IsShared,CategoryFK")] Reviews review, IFormFile? ImageReview, String[]userIdsList)
+        public async Task<IActionResult> Create([Bind("Title,Description,Rating,IsShared,CategoryFK")] Reviews review, IFormFile? ImageReview, int[]userIdsList)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            var usersList = new List<Utilizadores>();
             //verificar se o utilizador selecionou uma categoria
-            if(review.CategoryFK == -1)
+            if (review.CategoryFK == -1)
             {
                 ModelState.AddModelError("", "Deve escolher uma categoria!");
                 ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
-                ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
+                ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                             .OrderBy(u => u.UserName)
+                                                             .ToList();
                 return View(review);
             }
 
@@ -124,17 +167,19 @@ namespace Projeto.Controllers
             {
                 ModelState.AddModelError("", "Deve escolher a pontuação!");
                 ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
-                ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
+                ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                             .OrderBy(u => u.UserName)
+                                                             .ToList();
                 return View(review);
             }
 
-            //verificar se houver colaboradores
+            //verificar se há colaboradores
             if (!userIdsList.IsNullOrEmpty())
             {
-                var usersList = new List<Utilizadores>();
+                //se sim, guarda os colaboradores 
                 foreach (var id in userIdsList)
                 {
-                    var user = _context.Utilizadores.FirstOrDefault(u => u.UserId == id);
+                    var user = _context.Utilizadores.FirstOrDefault(u => u.Id == id);
                     if (user != null)
                     {
                         usersList.Add(user);
@@ -148,20 +193,18 @@ namespace Projeto.Controllers
                     {
                         ModelState.AddModelError("", "Houve um erro a guardar os colaboradores !");
                         ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
-                        ViewData["UsersList"] =_context.Utilizadores.OrderBy(u => u.UserName).ToList();
+                        ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                             .OrderBy(u => u.UserName)
+                                                             .ToList();
                         return View(review);
                     }
                 }
             }
-            //se não houver colaboradores na review, então guarda apenas o userId do utilizador que criou a review
-            else
-            {
-                var userList = new List<Utilizadores>();
-                var currentUserId = _userManager.GetUserId(User);
-                var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
-                userList.Add(util);
-                review.Users = userList; 
-            }
+            // guarda o userId do utilizador que criou a review
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            usersList.Add(util);
+            review.Users = usersList; 
+            
 
           /* Guardar a imagem no disco rígido do Servidor
           * Algoritmo
@@ -189,7 +232,9 @@ namespace Projeto.Controllers
                     {
                         ModelState.AddModelError("", "Deve fornecer uma imagem!");
                         ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
-                        ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
+                        ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                             .OrderBy(u => u.UserName)
+                                                             .ToList();
                         return View(review);
                     }
                     else
@@ -212,26 +257,35 @@ namespace Projeto.Controllers
             }
 
             ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
-            ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
+            ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                             .OrderBy(u => u.UserName)
+                                                             .ToList();
             return View(review);
         }
 
         // GET: Reviews/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            //obter o userId do utilizador atual
+            var currentUserId = _userManager.GetUserId(User);
+            //obter o id da tabela Utilizadores do utilizador atual
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             if (id == null)
             {
                 return NotFound();
             }
 
-            var reviews = await _context.Reviews.FindAsync(id);
-            if (reviews == null)
+            var review = await _context.Reviews.FindAsync(id);
+            if (review == null)
             {
                 return NotFound();
             }
-            ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", reviews.CategoryFK);
-            ViewData["UsersList"] = _context.Utilizadores.OrderBy(u => u.UserName).ToList();
-            return View(reviews);
+            ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
+            ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                         .OrderBy(u => u.UserName)
+                                                       .ToList();
+            ViewData["SelectedUserIds"] = _context.GetReviewUsers(id, util.Id);
+            return View(review);
         }
 
         // POST: Reviews/Edit/5
@@ -239,10 +293,12 @@ namespace Projeto.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ReviewId,Title,Description,Rating,Image,CategoryFK, IsShared")] Reviews review, IFormFile? ImageReview)
+        public async Task<IActionResult> Edit(int id, [Bind("ReviewId,Title,Description,Rating,Image,CategoryFK, IsShared")] Reviews review, IFormFile? ImageReview, int[]userIdsList)
         {
-            //select * from Reviews where ReviewId = id
-            Reviews r = _context.Reviews.AsNoTracking().FirstOrDefault(r => r.ReviewId == id);
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            var usersList = new List<Utilizadores>();
+ 
             if (id != review.ReviewId)
             {
                 return NotFound();
@@ -259,7 +315,9 @@ namespace Projeto.Controllers
                          *              1.1.1.1 - se sim, apaga a imagem anterior
                          *          1.1.2 - gera um nome e guarda a nova imagem
                          *      1.2 - se não
-                         *          1.1.2 - guarda a review sem alterar o campo da imagem
+                         *          1.2.1 - verificar se os colaboradores foram alterados
+                         *                1.2.1.1 - seguir algoritmo de atualizar os users
+                         *          1.2.2 - guarda a review sem alterar o campo da imagem e dos users
                          */
 
                      _context.Attach(review);
@@ -267,11 +325,11 @@ namespace Projeto.Controllers
                     if (ImageReview != null)
                     {
                         //a review já tinha uma imagem?
-                        if (r.Image != null)
+                        if (review.Image != null)
                         {
                             //eliminar imagem antiga
                             var localizacaoImagem = Path.Combine(_webHostEnvironment.WebRootPath, "Imagens");
-                            var oldImagePath = Path.Combine(localizacaoImagem, r.Image);
+                            var oldImagePath = Path.Combine(localizacaoImagem, review.Image);
                             System.IO.File.Delete(oldImagePath);
                             
                         }
@@ -284,8 +342,101 @@ namespace Projeto.Controllers
                         _context.Entry(review).Property("Image").IsModified = true; 
                        
                     }
+
+                    /*Algoritmo atualizar users(colaboradores)
+                     * 1 - Foram excluídos colaboradores?
+                     *  1.1 - sim, então eliminar esses users como colaboradores
+                     * 2 - Foram adicionados colaboradores?
+                     *  2.1 - Sim
+                     *      2.1.1 - ir buscar o utilizador com id correspondente ao do novo colaborador
+                     *      2.1.2 - adicionar o utilizador a uma lista dos utilizadores
+                     *      2.1.3 - a lista dos utilizadores não está fazia?
+                     *          2.2.1 - sim, guarda os utilizadores
+                     *          2.2.2 - não, manda uma mensagem de erro
+                     */
+                    //lista de utilizadores da review antes de ser editada
+                    List <int> usersIdSaved = _context.GetReviewUsers(review.ReviewId, util.Id);
+                    //idsToDelete - são os users que foram guardados na review, mas que deixaram de ser colaboradores
+                    IEnumerable<int> idsToDelete = usersIdSaved.Except(userIdsList);
+                    //idsToSave - são os users que não eram colboradores quando a review foi criada, mas passaram a ser
+                    IEnumerable<int> idsToSave = userIdsList.Except(usersIdSaved);
+
+                    //há algum user para eliminar?
+                    if (idsToDelete.Any())
+                    {
+                        //eliminar os colaboradores guardados antes da review ser editada
+                        foreach (int usId in idsToDelete)
+                        {
+                            _context.DeleteColaborator(review.ReviewId, usId);
+                        }
+                    }
+
+                    //há algum user para guardar?
+                    if (idsToSave.Any())
+                    {
+                        foreach (int usId in idsToSave)
+                        {
+                            //ir buscar o utilizador com o id igual ao do id do novo colaborador
+                            var user = _context.Utilizadores.FirstOrDefault(u => u.Id == usId);
+                            if (user != null)
+                            {
+                                usersList.Add(user);
+                            }
+
+                            if (userIdsList != null)
+                            {
+                                //guarda a lista de colaboradores na lista de users da review
+                                review.Users = usersList;
+                            }
+                            else
+                            {
+                                ModelState.AddModelError("", "Houve um erro a guardar os colaboradores !");
+                                ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
+                                ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                                     .OrderBy(u => u.UserName)
+                                                                     .ToList();
+                                return View(review);
+                            }
+                        }
+                    }
+                    ////comparar a lista de utilizadores da review já guardados, com a lista de agora
+                    //if (!(userIdsList.All(id => usersIdSaved.Contains(id))))
+                    //{
+                    //    //eliminar os colaboradores guarados antes da review ser editada
+                    //    foreach(int usId in usersIdSaved)
+                    //    {
+                    //        _context.DeleteColaborator(review.ReviewId, usId);
+                    //    }
+                    //    //faz uma nova lista de colaboradores 
+                    //    foreach (int i in userIdsList)
+                    //    {
+                    //        var user = _context.Utilizadores.FirstOrDefault(u => u.Id == i);
+                    //        if (user != null)
+                    //        {
+                    //            usersList.Add(user);
+                    //        }
+
+                    //        if (userIdsList != null)
+                    //        {
+                    //            //guarda a lista de colaboradores na lista de users da review
+                    //            review.Users = usersList;
+                    //        }
+                    //        else
+                    //        {
+                    //            ModelState.AddModelError("", "Houve um erro a guardar os colaboradores !");
+                    //            ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
+                    //            ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                    //                                                 .OrderBy(u => u.UserName)
+                    //                                                 .ToList();
+                    //            return View(review);
+                    //        }
+                    //    }
+
+                    //}
+                    
+
                     //atualizar os restantes campos
-                     _context.Entry(review).Property("Title").IsModified = true;
+                    _context.Entry(review).Property("Title").IsModified = true;
                      _context.Entry(review).Property("Description").IsModified = true;
                      _context.Entry(review).Property("Rating").IsModified = true;
                      _context.Entry(review).Property("CategoryFK").IsModified = true;
@@ -310,6 +461,9 @@ namespace Projeto.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
+            ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                         .OrderBy(u => u.UserName)
+                                                         .ToList();
             return View(review);
         }
 

@@ -12,8 +12,8 @@ using Projeto.Data;
 namespace Projeto.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240628161823_FuncionaPorFavor3")]
-    partial class FuncionaPorFavor3
+    [Migration("20240703140553_first")]
+    partial class first
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -245,31 +245,32 @@ namespace Projeto.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("Projeto.Models.Coments", b =>
+            modelBuilder.Entity("Projeto.Models.Comments", b =>
                 {
-                    b.Property<int>("ComentId")
+                    b.Property<int>("CommentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ComentId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CommentId"));
 
-                    b.Property<string>("Coment")
+                    b.Property<string>("Comment")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
-                    b.Property<int>("ReviewId")
+                    b.Property<int>("ReviewFK")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserId")
+                    b.Property<int>("UtilizadorFK")
                         .HasColumnType("int");
 
-                    b.HasKey("ComentId");
+                    b.HasKey("CommentId");
 
-                    b.HasIndex("ReviewId");
+                    b.HasIndex("ReviewFK");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UtilizadorFK");
 
-                    b.ToTable("Coments");
+                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("Projeto.Models.Favorites", b =>
@@ -300,8 +301,8 @@ namespace Projeto.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(3000)
-                        .HasColumnType("nvarchar(3000)");
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Image")
                         .HasMaxLength(50)
@@ -411,23 +412,23 @@ namespace Projeto.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Projeto.Models.Coments", b =>
+            modelBuilder.Entity("Projeto.Models.Comments", b =>
                 {
-                    b.HasOne("Projeto.Models.Reviews", "ReviewIdFK")
-                        .WithMany("Coments")
-                        .HasForeignKey("ReviewId")
+                    b.HasOne("Projeto.Models.Reviews", "Review")
+                        .WithMany("Comments")
+                        .HasForeignKey("ReviewFK")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Projeto.Models.Utilizadores", "UserIdFK")
+                    b.HasOne("Projeto.Models.Utilizadores", "Utilizador")
                         .WithMany("Coments")
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("UtilizadorFK")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ReviewIdFK");
+                    b.Navigation("Review");
 
-                    b.Navigation("UserIdFK");
+                    b.Navigation("Utilizador");
                 });
 
             modelBuilder.Entity("Projeto.Models.Favorites", b =>
@@ -482,7 +483,7 @@ namespace Projeto.Migrations
 
             modelBuilder.Entity("Projeto.Models.Reviews", b =>
                 {
-                    b.Navigation("Coments");
+                    b.Navigation("Comments");
 
                     b.Navigation("Favorites");
                 });

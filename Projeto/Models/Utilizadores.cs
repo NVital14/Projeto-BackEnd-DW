@@ -9,7 +9,7 @@ namespace Projeto.Models
         {
             Reviews = new HashSet<Reviews>();
             Favorites = new HashSet<Favorites>();
-            Coments = new HashSet<Coments>();
+            Coments = new HashSet<Comments>();
 
         }
         /// <summary>
@@ -41,7 +41,7 @@ namespace Projeto.Models
         /// <summary>
         /// lista de comentarios do utilizador
         /// </summary>
-        public ICollection<Coments> Coments { get; set; }
+        public ICollection<Comments> Coments { get; set; }
 
 
         // relacionamento N-M, com atributos no relacionamento
