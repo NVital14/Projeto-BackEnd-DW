@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Projeto.Models;
+using System.Data;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Projeto.Data
@@ -18,15 +19,34 @@ namespace Projeto.Data
         public DbSet<Categories> Categories { get; set; }
         public DbSet<Comments> Comments { get; set; }
 
-        public List<int> GetReviewUsers(int? reviewId, int userId)
+        public List<int> GetReviewUsers(int? reviewId, int userId, bool isJustCollaborators)
         {
             var cnn = (SqlConnection)this.Database.GetDbConnection();
-            cnn.Open();
+            if (cnn.State == ConnectionState.Closed)
+            {
+                cnn.Open();
+            }
 
-            var query = "SELECT UsersId from ReviewsUtilizadores ur  WHERE ur.ReviewsReviewId = @ReviewId and ur.UsersId != @userId;";
+            var query = "";
+
+            //quero só os colaboradores da review, sem o utilizador atual
+            if (isJustCollaborators)
+            {
+            query = "SELECT UsersId from ReviewsUtilizadores ur  WHERE ur.ReviewsReviewId = @ReviewId and ur.UsersId != @userId;";
+
+            }
+            //quero todos os utilizadores associados à review
+            else
+            {
+                query = "SELECT UsersId from ReviewsUtilizadores ur  WHERE ur.ReviewsReviewId = @ReviewId;";
+            }
             SqlCommand com = new SqlCommand(query, cnn);
-            com.Parameters.AddWithValue("@ReviewId", reviewId);
+            if (isJustCollaborators)
+            {
             com.Parameters.AddWithValue("@UserId", userId);
+
+            }
+            com.Parameters.AddWithValue("@ReviewId", reviewId);
 
             List<int> userIds = new List<int>();
             using (SqlDataReader reader = com.ExecuteReader())
@@ -41,10 +61,13 @@ namespace Projeto.Data
             //return this.Utilizadores.FromSqlRaw(query, new SqlParameter("@ReviewId", reviewId)).ToList();
         }
 
-        public void DeleteColaborator(int reviewId, int userId)
+        public void DeleteCollaborator(int reviewId, int userId)
         {
             var cnn = (SqlConnection)this.Database.GetDbConnection();
-            //cnn.Open();
+            if (cnn.State == ConnectionState.Closed)
+            {
+                cnn.Open();
+            }
 
             var query = "Delete from ReviewsUtilizadores WHERE ReviewsReviewId = @ReviewId and UsersId = @userId;";
             SqlCommand com = new SqlCommand(query, cnn);

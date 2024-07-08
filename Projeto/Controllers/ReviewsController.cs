@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.V4.Pages.Account.Internal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -41,15 +42,51 @@ namespace Projeto.Controllers
             _userManager = userManager;
         }
 
+        /// <summary>
+        /// Método que guarda a imagem no disco rigído
+        /// </summary>
+        /// <param name="ImageReview">ficheiro da imagem</param>
+        /// <param name="imageName">nome da imagem</param>
+        /// <returns></returns>
+        public async Task SaveImage(IFormFile ImageReview, String imageName)
+        {
+
+            string localizacaoImagem = Path.Combine(_webHostEnvironment.WebRootPath, "Imagens");
+            Console.WriteLine(localizacaoImagem);
+
+            if (!Directory.Exists(localizacaoImagem))
+            {
+                Directory.CreateDirectory(localizacaoImagem);
+            }
+
+            localizacaoImagem = Path.Combine(localizacaoImagem, imageName);
+
+            using var stream = new FileStream(localizacaoImagem, FileMode.Create);
+            await ImageReview.CopyToAsync(stream);
+
+        }
+
+        /// <summary>
+        /// Método que gera nome da imagem
+        /// </summary>
+        /// <param name="ImageReview"> Ficheiro da imagem</param>
+        /// <returns>Retorna uma string com o nome da imagem</returns>
+        public String GenerateImageName(IFormFile ImageReview)
+        {
+            Guid g = Guid.NewGuid();
+            var imageName = g.ToString() + Path.GetExtension(ImageReview.FileName).ToLowerInvariant();
+            return imageName;
+        }
+
         // GET: Reviews
-        [AllowAnonymous] // uma pessoa sem estar autenticada CONSEGUE aceder
+        //[AllowAnonymous] // uma pessoa sem estar autenticada CONSEGUE aceder
         public async Task<IActionResult> Index()
         {
             var currentUserId = _userManager.GetUserId(User);
             var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             if (util != null)
             {
-                
+                //um utilizador que tenha a permissão de admin tem acesso a todas as reviews
                 if (User.IsInRole("Admin")){
                     var applicationDbContext = _context.Reviews.Include(r => r.Category);
                     return View(await applicationDbContext.ToListAsync());
@@ -72,6 +109,9 @@ namespace Projeto.Controllers
         [AllowAnonymous] 
         public async Task<IActionResult> Details(int? id, string source)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+           
             //define o valor da source no ViewBag
             ViewBag.Source = source;
             if (id == null)
@@ -79,11 +119,34 @@ namespace Projeto.Controllers
                 return NotFound();
             }
 
+            var review = await _context.Reviews
+                .Include(r => r.Category)
+                .FirstOrDefaultAsync(m => m.ReviewId == id);
+            if (review == null)
+            {
+                return NotFound();
+            }
+            //um utilizador que tenha a permissão de admin tem acesso a todas as reviews
+            if (!User.IsInRole("Admin"))
+            {
+                //se a review não estiver partilhada, então, só os colaboradores podem ver os seus detalhes
+                if (review.IsShared == false)
+                {
+                    //todos os utilizadores associado à receita
+                    var reviewUsers = _context.GetReviewUsers(id, util.Id, false);
+                    //só um utilizador que seja colaborador da review é que pode mexer na página de editar
+                    if (!reviewUsers.Contains(util.Id))
+                    {
+                        return Forbid("Acesso Negado!");
+                    }
+                }
+            }
+
 
             var commentsList = _context.Comments
                              .Where(c => c.ReviewFK == id)
                              .Join(_context.Utilizadores,
-                                   c => c.UtilizadorFK, // supondo que Comment tenha uma propriedade UserId que referencia Utilizadores
+                                   c => c.UtilizadorFK, 
                                    u => u.Id,
                                    (c, u) => new Comments
                                    {
@@ -97,51 +160,11 @@ namespace Projeto.Controllers
             ViewData["CommentsList"] = commentsList;
 
 
-            var reviews = await _context.Reviews
-                .Include(r => r.Category)
-                .FirstOrDefaultAsync(m => m.ReviewId == id);
-            if (reviews == null)
-            {
-                return NotFound();
-            }
+            
 
-            return View(reviews);
+            return View(review);
         }
-        /// <summary>
-        /// Método que guarda a imagem no disco rigído
-        /// </summary>
-        /// <param name="ImageReview">ficheiro da imagem</param>
-        /// <param name="imageName">nome da imagem</param>
-        /// <returns></returns>
-        public async Task saveImage(IFormFile ImageReview, String imageName)
-        {
-           
-                string localizacaoImagem = Path.Combine(_webHostEnvironment.WebRootPath, "Imagens");
-                Console.WriteLine(localizacaoImagem);
-
-                if (!Directory.Exists(localizacaoImagem))
-                {
-                    Directory.CreateDirectory(localizacaoImagem);
-                }
-
-                localizacaoImagem = Path.Combine(localizacaoImagem, imageName);
-
-                using var stream = new FileStream(localizacaoImagem, FileMode.Create);
-                await ImageReview.CopyToAsync(stream);
-             
-        }
-
-        /// <summary>
-        /// Método que gera nome da imagem
-        /// </summary>
-        /// <param name="ImageReview"> Ficheiro da imagem</param>
-        /// <returns>Retorna uma string com o nome da imagem</returns>
-        public String generateImageName(IFormFile ImageReview)
-        {
-            Guid g = Guid.NewGuid();
-            var imageName = g.ToString() + Path.GetExtension(ImageReview.FileName).ToLowerInvariant();
-            return imageName;
-        }
+        
         // GET: Reviews/Create
         public IActionResult Create()
         {
@@ -249,7 +272,7 @@ namespace Projeto.Controllers
                     else
                     {
                         hasImage = true;
-                        imageName = generateImageName(ImageReview);
+                        imageName = GenerateImageName(ImageReview);
                         review.Image = imageName;
                     }
                 }
@@ -259,7 +282,7 @@ namespace Projeto.Controllers
 
                 if (hasImage)
                 {
-                  await saveImage(ImageReview, imageName);
+                  await SaveImage(ImageReview, imageName);
                 }
 
                 return RedirectToAction(nameof(Index));
@@ -279,6 +302,17 @@ namespace Projeto.Controllers
             var currentUserId = _userManager.GetUserId(User);
             //obter o id da tabela Utilizadores do utilizador atual
             var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            //um utilizador que tenha a permissão de admin tem acesso a tudo
+            if (!User.IsInRole("Admin"))
+            {
+                //todos os utilizadores associado à receita
+                var reviewUsers = _context.GetReviewUsers(id, util.Id, false);
+                //só um utilizador que seja colaborador da review é que pode mexer na página de editar
+                if (!reviewUsers.Contains(util.Id))
+                {
+                    return Forbid("Acesso Negado!");
+                }
+            }
             if (id == null)
             {
                 return NotFound();
@@ -293,7 +327,7 @@ namespace Projeto.Controllers
             ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
                                                          .OrderBy(u => u.UserName)
                                                        .ToList();
-            ViewData["SelectedUserIds"] = _context.GetReviewUsers(id, util.Id);
+            ViewData["SelectedUserIds"] = _context.GetReviewUsers(id, util.Id, true);
             return View(review);
         }
 
@@ -304,6 +338,7 @@ namespace Projeto.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("ReviewId,Title,Description,Rating,Image,CategoryFK, IsShared")] Reviews review, IFormFile? ImageReview, int[]userIdsList)
         {
+
             var currentUserId = _userManager.GetUserId(User);
             var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             var usersList = new List<Utilizadores>();
@@ -343,9 +378,9 @@ namespace Projeto.Controllers
                             
                         }
                         //guardar nova imagem
-                        string imageName = generateImageName(ImageReview);
+                        string imageName = GenerateImageName(ImageReview);
                         review.Image = imageName;
-                        await saveImage(ImageReview, imageName);
+                        await SaveImage(ImageReview, imageName);
 
                         //atualizar o campo imagem
                         _context.Entry(review).Property("Image").IsModified = true; 
@@ -364,7 +399,7 @@ namespace Projeto.Controllers
                      *          2.2.2 - não, manda uma mensagem de erro
                      */
                     //lista de utilizadores da review antes de ser editada
-                    List <int> usersIdSaved = _context.GetReviewUsers(review.ReviewId, util.Id);
+                    List <int> usersIdSaved = _context.GetReviewUsers(review.ReviewId, util.Id, true);
                     //idsToDelete - são os users que foram guardados na review, mas que deixaram de ser colaboradores
                     IEnumerable<int> idsToDelete = usersIdSaved.Except(userIdsList);
                     //idsToSave - são os users que não eram colboradores quando a review foi criada, mas passaram a ser
@@ -376,7 +411,7 @@ namespace Projeto.Controllers
                         //eliminar os colaboradores guardados antes da review ser editada
                         foreach (int usId in idsToDelete)
                         {
-                            _context.DeleteColaborator(review.ReviewId, usId);
+                            _context.DeleteCollaborator(review.ReviewId, usId);
                         }
                     }
 
@@ -408,40 +443,6 @@ namespace Projeto.Controllers
                             }
                         }
                     }
-                    ////comparar a lista de utilizadores da review já guardados, com a lista de agora
-                    //if (!(userIdsList.All(id => usersIdSaved.Contains(id))))
-                    //{
-                    //    //eliminar os colaboradores guarados antes da review ser editada
-                    //    foreach(int usId in usersIdSaved)
-                    //    {
-                    //        _context.DeleteColaborator(review.ReviewId, usId);
-                    //    }
-                    //    //faz uma nova lista de colaboradores 
-                    //    foreach (int i in userIdsList)
-                    //    {
-                    //        var user = _context.Utilizadores.FirstOrDefault(u => u.Id == i);
-                    //        if (user != null)
-                    //        {
-                    //            usersList.Add(user);
-                    //        }
-
-                    //        if (userIdsList != null)
-                    //        {
-                    //            //guarda a lista de colaboradores na lista de users da review
-                    //            review.Users = usersList;
-                    //        }
-                    //        else
-                    //        {
-                    //            ModelState.AddModelError("", "Houve um erro a guardar os colaboradores !");
-                    //            ViewData["CategoryFK"] = new SelectList(_context.Categories, "CategoryId", "Name", review.CategoryFK);
-                    //            ViewData["UsersList"] = _context.Utilizadores.Where(u => u.UserId != currentUserId)
-                    //                                                 .OrderBy(u => u.UserName)
-                    //                                                 .ToList();
-                    //            return View(review);
-                    //        }
-                    //    }
-
-                    //}
                     
 
                     //atualizar os restantes campos
@@ -479,6 +480,20 @@ namespace Projeto.Controllers
         // GET: Reviews/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            //um utilizador que tenha a permissão de admin tem acesso a tudo
+            if (!User.IsInRole("Admin"))
+            {
+                var currentUserId = _userManager.GetUserId(User);
+                var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+
+                //todos os utilizadores associado à receita
+                var reviewUsers = _context.GetReviewUsers(id, util.Id, false);
+                //só um utilizador que seja colaborador da review é que pode mexer na página de editar
+                if (!reviewUsers.Contains(util.Id))
+                {
+                    return Forbid("Acesso Negado!");
+                }
+            }
             if (id == null)
             {
                 return NotFound();
@@ -500,10 +515,24 @@ namespace Projeto.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var reviews = await _context.Reviews.FindAsync(id);
-            if (reviews != null)
+            
+            var review = await _context.Reviews.FindAsync(id);
+            if (review != null)
             {
-                _context.Reviews.Remove(reviews);
+                //a review tinha imagem
+                if (review.Image != null)
+                {
+                    //eliminar imagem 
+                    var localizacaoImagem = Path.Combine(_webHostEnvironment.WebRootPath, "Imagens");
+                    var oldImagePath = Path.Combine(localizacaoImagem, review.Image);
+                    System.IO.File.Delete(oldImagePath);
+
+                }
+                _context.Reviews.Remove(review);
+            }
+            else
+            {
+                return NotFound("A Review não foi encontrada");
             }
 
             await _context.SaveChangesAsync();

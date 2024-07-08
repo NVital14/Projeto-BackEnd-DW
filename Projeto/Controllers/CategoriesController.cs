@@ -35,14 +35,14 @@ namespace Projeto.Controllers
                 return NotFound();
             }
 
-            var categories = await _context.Categories
+            var category = await _context.Categories
                 .FirstOrDefaultAsync(m => m.CategoryId == id);
-            if (categories == null)
+            if (category == null)
             {
                 return NotFound();
             }
 
-            return View(categories);
+            return View(category);
         }
 
         // GET: Categories/Create
@@ -75,12 +75,12 @@ namespace Projeto.Controllers
                 return NotFound();
             }
 
-            var categories = await _context.Categories.FindAsync(id);
-            if (categories == null)
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null)
             {
                 return NotFound();
             }
-            return View(categories);
+            return View(category);
         }
 
         // POST: Categories/Edit/5
@@ -88,9 +88,9 @@ namespace Projeto.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("CategoryId,Name")] Categories categories)
+        public async Task<IActionResult> Edit(int id, [Bind("CategoryId,Name")] Categories category)
         {
-            if (id != categories.CategoryId)
+            if (id != category.CategoryId)
             {
                 return NotFound();
             }
@@ -99,12 +99,12 @@ namespace Projeto.Controllers
             {
                 try
                 {
-                    _context.Update(categories);
+                    _context.Update(category);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CategoriesExists(categories.CategoryId))
+                    if (!CategoriesExists(category.CategoryId))
                     {
                         return NotFound();
                     }
@@ -115,7 +115,7 @@ namespace Projeto.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(categories);
+            return View(category);
         }
 
         // GET: Categories/Delete/5
@@ -141,10 +141,10 @@ namespace Projeto.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var categories = await _context.Categories.FindAsync(id);
-            if (categories != null)
+            var category = await _context.Categories.FindAsync(id);
+            if (category != null)
             {
-                _context.Categories.Remove(categories);
+                _context.Categories.Remove(category);
             }
 
             await _context.SaveChangesAsync();

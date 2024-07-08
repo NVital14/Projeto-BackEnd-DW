@@ -17,6 +17,12 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
    .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
 
+//resolução da excessão - JsonException object cycle
+builder.Services.AddControllersWithViews()
+    .AddNewtonsoftJson(options =>
+    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+);
+
 //using (var scope = app.Services.CreateScope())
 //{
 //    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
