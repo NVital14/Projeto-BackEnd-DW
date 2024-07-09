@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -56,16 +57,48 @@ namespace Projeto.Controllers.API
         /// <param name="id">Id da review</param>
         /// <returns>Uma review</returns>
         [HttpGet]
-        [Route("review-id/{id}")] //working
-        public async Task<IActionResult> GetReviewById([FromRoute] int id)
+        [Route("review-id-details/{id}")] //working
+        public async Task<IActionResult> GetReviewById([FromRoute] int id, [FromQuery] string action)
         {
-
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            
             if (!ReviewExists(id))
             {
                 return NotFound("A Review não foi encontrada");
             }
             var review = await _context.Reviews
                                           .FirstOrDefaultAsync(c => c.ReviewId == id);
+
+            //um utilizador que tenha a permissão de admin tem acesso a todas as reviews
+            if (!User.IsInRole("Admin"))
+            {
+                if(action == "Details") { 
+                    //se a review não estiver partilhada, então, só os colaboradores podem ver os seus detalhes
+                    if (review.IsShared == false)
+                    {
+                        //todos os utilizadores associado à receita
+                        var reviewUsers = _context.GetReviewUsers(id, util.Id, false);
+                        //só um utilizador que seja colaborador da review é que pode mexer na página de editar
+                        if (!reviewUsers.Contains(util.Id))
+                        {
+                            return Forbid("Acesso Negado!");
+                        }
+                    }
+                }
+                else
+                {
+                    //todos os utilizadores associado à receita
+                    var reviewUsers = _context.GetReviewUsers(id, util.Id, false);
+                    //só um utilizador que seja colaborador da review é que pode mexer na página de editar
+                    if (!reviewUsers.Contains(util.Id))
+                    {
+                        return Forbid("Acesso Negado!");
+                    }
+                }
+            }
+            var comments = await _context.Comments.Where(c => c.ReviewFK == id).ToListAsync();
+            review.Comments = comments;
             return Ok(review);
 
         }
@@ -80,6 +113,7 @@ namespace Projeto.Controllers.API
         /// <param name="imageReview"></param>
         /// <param name="userIdsList"></param>
         /// <returns>A review que foi criada</returns>
+        [Authorize]
         [HttpPost]
         [Route("create-review")] 
         public async Task<IActionResult> CreateReview([FromForm] string title,[FromForm] string description, [FromForm] int rating,[FromForm] bool isShared,[FromForm] int categoryFK,[FromForm] IFormFile? imageReview, [FromForm] int[]? userIdsList)
@@ -112,7 +146,6 @@ namespace Projeto.Controllers.API
                     }
                 }
             }
-            /////////////////////////////////////////////////////////////////////////////////////////////
             //Adicionar o utilizador atual à lista de utilizadores da review
             var currentUser = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             usersList.Add(currentUser);
@@ -153,7 +186,7 @@ namespace Projeto.Controllers.API
             return BadRequest("Não deu!");
 
         }
-
+        [Authorize]
         [HttpPut]
         [Route("edit-review/{id}")]
         public async Task<IActionResult> EditReview([FromRoute] int id, [FromForm] string title, [FromForm] string description, [FromForm] int rating, [FromForm] bool isShared, [FromForm] int categoryFK, [FromForm] IFormFile? imageReview, [FromForm] int[]? userIdsList)

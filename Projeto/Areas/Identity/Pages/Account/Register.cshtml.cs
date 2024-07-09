@@ -138,10 +138,10 @@ namespace Projeto.Areas.Identity.Pages.Account
                         // ***********************************
 
                         // criar uma ligação entre a tabela dos Utilizadores
-                        // (neste caso, um Professor) e a tabela da Autenticação
+                        // e a tabela da Autenticação
                         Input.Utilizador.UserId = user.Id;
 
-                        // adicionar os dados do Professor à BD
+                        // adicionar os dados do utilizador à BD
                         _context.Add(Input.Utilizador);
                         await _context.SaveChangesAsync();
                         // ***********************************
