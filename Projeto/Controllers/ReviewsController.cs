@@ -79,7 +79,6 @@ namespace Projeto.Controllers
         }
 
         // GET: Reviews
-        //[AllowAnonymous] // uma pessoa sem estar autenticada CONSEGUE aceder
         public async Task<IActionResult> Index()
         {
             var currentUserId = _userManager.GetUserId(User);
@@ -142,12 +141,12 @@ namespace Projeto.Controllers
                 }
             }
 
-
+            //vai buscar os comentários, onde a ReviewFK, for igual à review atual e também vai buscar os dados do utilizador que fez cada comentário
             var commentsList = _context.Comments
+                              //filtra os comments pelo id da review
                              .Where(c => c.ReviewFK == id)
-                             .Join(_context.Utilizadores,
-                                   c => c.UtilizadorFK, 
-                                   u => u.Id,
+                             //junta com a tabela utilizador
+                             .Join(_context.Utilizadores,c => c.UtilizadorFK, u => u.Id,
                                    (c, u) => new Comments
                                    {
                                        CommentId = c.CommentId,

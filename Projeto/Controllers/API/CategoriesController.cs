@@ -12,7 +12,7 @@ namespace Projeto.Controllers.API
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Admin")]
     public class CategoriesController : ControllerBase
     {
         public ApplicationDbContext _context;
@@ -30,8 +30,16 @@ namespace Projeto.Controllers.API
         [Route("category")] //working
         public async Task<IActionResult> GetCategory()
         {
+            try
+            {
+
             var categoriesList = await _context.Categories.ToListAsync();
             return Ok(categoriesList);
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
 
         [HttpGet]

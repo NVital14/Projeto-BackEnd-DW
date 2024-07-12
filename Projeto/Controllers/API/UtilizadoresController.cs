@@ -35,7 +35,21 @@ namespace Projeto.Controllers.API
             {
                 var body = await reader.ReadToEndAsync();
                 dynamic data = JsonConvert.DeserializeObject(body); 
-                if (data == null || data.email == null || data.password == null || data.userName)
+                if (data == null )
+                    
+                {
+                    return BadRequest("Json Inválido, não enviou o email, a password ou o nome de utilizador");
+                }
+                if(data.email == null)
+                {
+                    return BadRequest("Json Inválido, não enviou o email, a password ou o nome de utilizador");
+                }
+
+                if(data.password == null)
+                {
+                    return BadRequest("Json Inválido, não enviou o email, a password ou o nome de utilizador");
+                }
+                if(data.userName == null)
                 {
                     return BadRequest("Json Inválido, não enviou o email, a password ou o nome de utilizador");
                 }
@@ -106,9 +120,18 @@ namespace Projeto.Controllers.API
             {
                 var body = await reader.ReadToEndAsync();
                 dynamic data = JsonConvert.DeserializeObject(body);
-                if (data == null || data.email == null || data.password == null)
+                if (data == null)
                 {
-                    return BadRequest("Json Inválido, não enviou  o email ou a password");
+                    return BadRequest("Json Inválido, não enviou  dados");
+                }
+                if (data.email == null)
+                {
+                    return BadRequest("Json Inválido, não enviou o email");
+                }
+
+                if (data.password == null)
+                {
+                    return BadRequest("Json Inválido, não enviou a password ");
                 }
                 try
                 {
@@ -122,9 +145,10 @@ namespace Projeto.Controllers.API
                         if (passWorks.Equals(PasswordVerificationResult.Success))
                         {
                             await _signInManager.SignInAsync(user, false);
+                            return Ok("O utlizador entrou na conta");
                         }
                     }
-                    return Ok("O utlizador entrou na conta");
+                    return NotFound("O utilizador não foi encontrado");
                 }
                 catch (Exception e)
                 {
@@ -168,8 +192,88 @@ namespace Projeto.Controllers.API
             try
             {
                 var currentUserId = _userManager.GetUserId(User);
-                var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+                var util = await _context.Utilizadores.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 return Ok(util);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+
+        }
+
+        /// <summary>
+        /// Verifica se o user está autenticado
+        /// </summary>
+        /// <returns>boolean</returns>
+        [HttpGet]
+        [Route("is-authenticaded")]
+        public async Task<IActionResult> IsUserAuthenticated()
+        {
+            try
+            {
+                bool isAuthenticated = User.Identity.IsAuthenticated;
+
+                if (isAuthenticated)
+                {
+                    return Ok(true);
+                }
+                else
+                {
+                    return Ok(false);
+                }
+            }
+            catch
+            {
+                return BadRequest();
+            }
+
+        }
+
+        /// <summary>
+        /// Verifica se o user é admin
+        /// </summary>
+        /// <returns>boolean</returns>
+        [HttpGet]
+        [Route("is-admin")]
+        public async Task<IActionResult> IsUserAdmin()
+        {
+            try
+            {
+                bool isAd = User.IsInRole("Admin");
+
+                if (isAd)
+                {
+                    return Ok(true);
+                }
+                else
+                {
+                    return Ok(false);
+                }
+            }
+            catch
+            {
+                return BadRequest();
+            }
+
+        }
+
+
+        /// <summary>
+        /// Via buscar todos os utilizadores
+        /// </summary>
+        /// <returns>lista de utilizadores</returns>
+        [HttpGet]
+        [Route("users")]
+        public async Task<IActionResult> GetUsers()
+        {
+            try
+            {
+                var currentUserId = _userManager.GetUserId(User);
+                var users = await _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                         .OrderBy(u => u.UserName)
+                                                         .ToListAsync();
+                return Ok(users);
             }
             catch
             {
@@ -180,3 +284,4 @@ namespace Projeto.Controllers.API
 
     }
 }
+

@@ -34,10 +34,14 @@ namespace Projeto.Controllers.API
         /// <returns>Mensagem de sucesso ou não sucesso</returns>
         [HttpPost]
         [Route("create-comment/{revId}")] //working
-        public async Task<IActionResult> GetComments([FromRoute]int revId)
+        public async Task<IActionResult> SaveComments([FromRoute]int revId)
         {
             var currentUserId = _userManager.GetUserId(User);
             var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            if(util == null)
+            {
+                return Forbid("Para fazer um comentário tem que estar na sua conta!");
+            }
             using (var reader = new StreamReader(Request.Body))
             {
                 var body = await reader.ReadToEndAsync();

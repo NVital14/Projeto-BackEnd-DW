@@ -34,5 +34,7 @@ namespace Projeto.Models
         /// Lista de reviews de cada categoria
         /// </summary>
         public ICollection<Reviews> Reviews { get; set; }
+
+
     }
 }

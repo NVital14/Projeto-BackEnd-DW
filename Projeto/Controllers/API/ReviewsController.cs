@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Projeto.Data;
 using Projeto.Models;
 using System.Diagnostics;
+using System.Net.WebSockets;
 using System.Runtime.Intrinsics.X86;
 
 namespace Projeto.Controllers.API
@@ -44,7 +45,7 @@ namespace Projeto.Controllers.API
         /// </summary>
         /// <returns>Lista de reviews</returns>
         [HttpGet]
-        [Route("review")] //working
+        [Route("reviews-user")] //working
         public async Task<IActionResult> GetReview()
         {
             var reviewsList = await _context.Reviews.ToListAsync();
@@ -58,10 +59,14 @@ namespace Projeto.Controllers.API
         /// <returns>Uma review</returns>
         [HttpGet]
         [Route("review-id-details/{id}")] //working
-        public async Task<IActionResult> GetReviewById([FromRoute] int id, [FromQuery] string action)
+        public async Task<IActionResult> GetReviewById([FromRoute] int id)
         {
+            //Este endpoint só é usado para ir buscar reviews, para ver os detalhes da review
+            
             var currentUserId = _userManager.GetUserId(User);
             var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+
+               
             
             if (!ReviewExists(id))
             {
@@ -73,35 +78,100 @@ namespace Projeto.Controllers.API
             //um utilizador que tenha a permissão de admin tem acesso a todas as reviews
             if (!User.IsInRole("Admin"))
             {
-                if(action == "Details") { 
-                    //se a review não estiver partilhada, então, só os colaboradores podem ver os seus detalhes
-                    if (review.IsShared == false)
+                //se o utilizador for null e a review não estiver partilhada, não pode aceder
+                if (util == null && review.IsShared == false) 
+                {
+                    return Forbid("Acesso Negado!");
+
+                }
+                //se a review não estiver partilhada, então, só os colaboradores podem ver os seus detalhes
+                if (review.IsShared == false)
                     {
                         //todos os utilizadores associado à receita
                         var reviewUsers = _context.GetReviewUsers(id, util.Id, false);
+
                         //só um utilizador que seja colaborador da review é que pode mexer na página de editar
                         if (!reviewUsers.Contains(util.Id))
                         {
                             return Forbid("Acesso Negado!");
                         }
                     }
-                }
-                else
-                {
-                    //todos os utilizadores associado à receita
-                    var reviewUsers = _context.GetReviewUsers(id, util.Id, false);
-                    //só um utilizador que seja colaborador da review é que pode mexer na página de editar
-                    if (!reviewUsers.Contains(util.Id))
-                    {
-                        return Forbid("Acesso Negado!");
-                    }
-                }
+                
             }
             var comments = await _context.Comments.Where(c => c.ReviewFK == id).ToListAsync();
+            foreach (var c in comments)
+            {
+                var u = await _context.Utilizadores.Where(u => u.Id == c.UtilizadorFK).FirstOrDefaultAsync();
+                c.Utilizador = u;
+            }
+            var category = await _context.Categories.Where(c => c.CategoryId == review.CategoryFK).FirstOrDefaultAsync();
             review.Comments = comments;
+            review.Category = category;
             return Ok(review);
 
         }
+
+        /// <summary>
+        /// Vai buscar as reviews paginadas
+        /// </summary>
+        /// <param name="pageNumber"></param>
+        /// <param name="pageSize"></param>
+        /// <returns>As reviews por página</returns>
+        [HttpGet]
+        [Route("reviews-paginated")]
+        public async Task<IActionResult> GetReviewsPaginated([FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] bool byUser)
+        {
+            
+            List <Reviews> reviews;
+            var totalRecords = 0;
+            if (!byUser)
+            {
+             reviews = await _context.Reviews
+                                        .Skip((pageNumber - 1) * pageSize)
+                                        .Take(pageSize)
+                                        .ToListAsync();
+
+             totalRecords = await _context.Reviews.CountAsync();
+            }
+            else
+            {
+                var currentUserId = _userManager.GetUserId(User);
+                var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+                reviews = await _context.Reviews
+                                .Include(r => r.Users) // Inclui a navegação de Users
+                                .Where(r => r.Users.Any(u => u.Id == util.Id))
+                                .Skip((pageNumber - 1) * pageSize)
+                                .Take(pageSize)
+                                .ToListAsync();
+                totalRecords = await _context.Reviews.Where(r => r.Users.Any(u => u.Id == util.Id)).CountAsync();
+            }
+
+            foreach(var r in reviews)
+            {
+                var comments = await _context.Comments.Where(c => c.ReviewFK == r.ReviewId).ToListAsync();
+
+                foreach(var c in comments)
+                {
+                    var u = await _context.Utilizadores.Where(u => u.Id == c.UtilizadorFK).FirstOrDefaultAsync();
+                    c.Utilizador = u;
+                }
+                var category = await _context.Categories.Where(c => c.CategoryId == r.CategoryFK).FirstOrDefaultAsync();
+                r.Comments = comments;
+                r.Category = category;
+            }
+            var response = new
+            {
+                TotalRecords = totalRecords,
+                PageSize = pageSize,
+                CurrentPage = pageNumber,
+                TotalPages = (int)Math.Ceiling((double)totalRecords / pageSize),
+                Reviews = reviews
+            };
+
+
+            return Ok(response);
+        }
+
         /// <summary>
         /// Cria uma review
         /// </summary>
@@ -122,17 +192,12 @@ namespace Projeto.Controllers.API
             var currentUserId = _userManager.GetUserId(User);
             var usersList = new List<Utilizadores>();
 
-            // Verificar se o utilizador selecionou uma categoria
-            if (categoryFK == -1)
+            // Verifificar se os campos obrigatórios estão preenchidos
+            if (title == null || categoryFK == -1 || rating == 0 || description == null)
             {
-                return BadRequest("Deve escolher uma categoria!");
+                return BadRequest("O título, a avaliação, a categoria e a descrição são de preenchimento obrigatório!");
             }
 
-            // Verificar se foi introduzido o rating
-            if (rating == 0)
-            {
-                return BadRequest("Deve escolher a avaliação!");
-            }
 
             // Verificar se há colaboradores
             if (!userIdsList.IsNullOrEmpty())
@@ -195,6 +260,11 @@ namespace Projeto.Controllers.API
             var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             var usersList = new List<Utilizadores>();
 
+            // Verifificar se os campos obrigatórios estão preenchidos
+            if (title == null || categoryFK == -1 || rating == 0 || description == null)
+            {
+                return BadRequest("O título, a avaliação, a categoria e a descrição são de preenchimento obrigatório!");
+            }
             if (!ReviewExists(id))
             {
                 return NotFound();
@@ -322,6 +392,7 @@ namespace Projeto.Controllers.API
                 if (review.Image != null)
                 {
                     //eliminar imagem 
+                    
                     var localizacaoImagem = Path.Combine(_webHostEnvironment.WebRootPath, "Imagens");
                     var oldImagePath = Path.Combine(localizacaoImagem, review.Image);
                     System.IO.File.Delete(oldImagePath);
@@ -346,6 +417,8 @@ namespace Projeto.Controllers.API
         {
             return _context.Reviews.Any(e => e.ReviewId == id);
         }
+
+        
 
         /// <summary>
         /// Método que guarda a imagem no disco rigído

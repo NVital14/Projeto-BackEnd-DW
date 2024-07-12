@@ -15,6 +15,15 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
    .AddRoles<IdentityRole>()
    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
+// Configuração de cookies
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Garante que os cookies sejam enviados apenas via HTTPS
+});
+
 builder.Services.AddControllersWithViews();
 
 //resolução da excessão - JsonException object cycle
@@ -22,6 +31,21 @@ builder.Services.AddControllersWithViews()
     .AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
 );
+
+//CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:3000")
+                   .AllowAnyHeader()
+                   .AllowAnyMethod()
+                    .AllowCredentials();
+        });
+});
+
+
 
 //using (var scope = app.Services.CreateScope())
 //{
@@ -62,8 +86,19 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+//CORS
+app.UseCors("AllowSpecificOrigin");
+
+
 app.UseAuthorization();
 
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers()
+             .RequireCors("AllowSpecificOrigin"); // Exigindo a política CORS para os controllers
+
+    endpoints.MapRazorPages();
+});
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
