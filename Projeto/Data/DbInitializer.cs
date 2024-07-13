@@ -39,7 +39,7 @@ namespace Projeto.Data
                         EmailConfirmed = true,
                         SecurityStamp = "5ZPZEF6SBW7IU4M344XNLT4NN5RO4GRU",
                         ConcurrencyStamp = "c86d8254-dd50-44be-8561-d2d44d4bbb2f",
-                        PasswordHash = hasher.HashPassword(null, "Aa0_aa"),
+                        PasswordHash = hasher.HashPassword(null, "aAo1234."),
                     };
 
                     var result = await userManager.CreateAsync(user, "Admin@123");

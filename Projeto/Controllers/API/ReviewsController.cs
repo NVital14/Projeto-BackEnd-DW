@@ -48,6 +48,7 @@ namespace Projeto.Controllers.API
         [Route("reviews-user")] //working
         public async Task<IActionResult> GetReview()
         {
+            
             var reviewsList = await _context.Reviews.ToListAsync();
             return Ok(reviewsList);
         }
@@ -112,6 +113,9 @@ namespace Projeto.Controllers.API
 
         }
 
+
+
+
         /// <summary>
         /// Vai buscar as reviews paginadas
         /// </summary>
@@ -138,12 +142,16 @@ namespace Projeto.Controllers.API
             {
                 var currentUserId = _userManager.GetUserId(User);
                 var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+
+                if(util == null) {
+                    return Forbid();
+                }
                 reviews = await _context.Reviews
-                                .Include(r => r.Users) // Inclui a navegação de Users
-                                .Where(r => r.Users.Any(u => u.Id == util.Id))
-                                .Skip((pageNumber - 1) * pageSize)
-                                .Take(pageSize)
-                                .ToListAsync();
+                                 .Include(r => r.Users) // Inclui os users
+                                 .Where(r => r.Users.Any(u => u.Id == util.Id))
+                                 .Skip((pageNumber - 1) * pageSize)
+                                 .Take(pageSize)
+                                 .ToListAsync();
                 totalRecords = await _context.Reviews.Where(r => r.Users.Any(u => u.Id == util.Id)).CountAsync();
             }
 
@@ -171,6 +179,65 @@ namespace Projeto.Controllers.API
 
 
             return Ok(response);
+        }
+
+
+        /// <summary>
+        /// Vai buscar as reviews favoritas paginadas
+        /// </summary>
+        /// <param name="pageNumber"></param>
+        /// <param name="pageSize"></param>
+        /// <returns>As reviews por página</returns>
+        [HttpGet]
+        [Route("favorites-paginated")]
+        public async Task<IActionResult> GetFavoriteReviewsPaginated([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+
+            List<Reviews> reviews;
+            var totalRecords = 0;
+            try
+            {
+            var favoriteReviewIds = await _context.Favorites.Where(f => f.UtilizadorFK == util.Id).Select(f => f.ReviewFK).ToListAsync();
+                reviews = await _context.Reviews.Where(r => favoriteReviewIds.Contains(r.ReviewId))
+                                          .Skip((pageNumber - 1) * pageSize)
+                                          .Take(pageSize)
+                                          .ToListAsync();
+
+                totalRecords = await _context.Reviews.Where(r => favoriteReviewIds.Contains(r.ReviewId)).CountAsync();
+
+                foreach (var r in reviews)
+                {
+                    var comments = await _context.Comments.Where(c => c.ReviewFK == r.ReviewId).ToListAsync();
+
+                    foreach (var c in comments)
+                    {
+                        var u = await _context.Utilizadores.Where(u => u.Id == c.UtilizadorFK).FirstOrDefaultAsync();
+                        c.Utilizador = u;
+                    }
+                    var category = await _context.Categories.Where(c => c.CategoryId == r.CategoryFK).FirstOrDefaultAsync();
+                    r.Comments = comments;
+                    r.Category = category;
+                }
+                var response = new
+                {
+                    TotalRecords = totalRecords,
+                    PageSize = pageSize,
+                    CurrentPage = pageNumber,
+                    TotalPages = (int)Math.Ceiling((double)totalRecords / pageSize),
+                    Reviews = reviews
+                };
+
+
+                return Ok(response);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+            
+               
         }
 
         /// <summary>
@@ -257,8 +324,8 @@ namespace Projeto.Controllers.API
         [Route("edit-review/{id}")]
         public async Task<IActionResult> EditReview([FromRoute] int id, [FromForm] string title, [FromForm] string description, [FromForm] int rating, [FromForm] bool isShared, [FromForm] int categoryFK, [FromForm] IFormFile? imageReview, [FromForm] int[]? userIdsList)
         {
-            //var currentUserId = _userManager.GetUserId(User);
-            //var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             var usersList = new List<Utilizadores>();
 
             // Verifificar se os campos obrigatórios estão preenchidos
@@ -309,7 +376,7 @@ namespace Projeto.Controllers.API
 
                     /***************** atualizar users(colaboradores) ***************/
                     //lista de utilizadores da review antes de ser editada
-                    List<int> usersIdSaved = _context.GetReviewUsers(review.ReviewId, 1, true);
+                    List<int> usersIdSaved = _context.GetReviewUsers(review.ReviewId, util.Id, true);
                     //List<int> usersIdSaved = _context.GetReviewUsers(review.ReviewId, util.Id, true);
                     //idsToDelete - são os users que foram guardados na review, mas que deixaram de ser colaboradores
                     IEnumerable<int> idsToDelete = usersIdSaved.Except(userIdsList);

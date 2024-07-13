@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Projeto.Migrations
 {
     /// <inheritdoc />
-    public partial class First : Migration
+    public partial class FirstAfterAllChanges : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -238,21 +238,21 @@ namespace Projeto.Migrations
                 name: "Favorites",
                 columns: table => new
                 {
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    ReviewId = table.Column<int>(type: "int", nullable: false)
+                    UtilizadorFK = table.Column<int>(type: "int", nullable: false),
+                    ReviewFK = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Favorites", x => new { x.UserId, x.ReviewId });
+                    table.PrimaryKey("PK_Favorites", x => new { x.UtilizadorFK, x.ReviewFK });
                     table.ForeignKey(
-                        name: "FK_Favorites_Reviews_ReviewId",
-                        column: x => x.ReviewId,
+                        name: "FK_Favorites_Reviews_ReviewFK",
+                        column: x => x.ReviewFK,
                         principalTable: "Reviews",
                         principalColumn: "ReviewId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Favorites_Utilizadores_UserId",
-                        column: x => x.UserId,
+                        name: "FK_Favorites_Utilizadores_UtilizadorFK",
+                        column: x => x.UtilizadorFK,
                         principalTable: "Utilizadores",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -281,6 +281,11 @@ namespace Projeto.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                values: new object[] { "1", null, "Admin", "ADMIN" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -332,9 +337,9 @@ namespace Projeto.Migrations
                 column: "UtilizadorFK");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Favorites_ReviewId",
+                name: "IX_Favorites_ReviewFK",
                 table: "Favorites",
-                column: "ReviewId");
+                column: "ReviewFK");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reviews_CategoryFK",

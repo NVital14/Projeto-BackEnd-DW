@@ -12,8 +12,8 @@ using Projeto.Data;
 namespace Projeto.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240708145106_First")]
-    partial class First
+    [Migration("20240713132940_FirstAfterAllChanges")]
+    partial class FirstAfterAllChanges
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -50,6 +50,14 @@ namespace Projeto.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "1",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -275,15 +283,15 @@ namespace Projeto.Migrations
 
             modelBuilder.Entity("Projeto.Models.Favorites", b =>
                 {
-                    b.Property<int>("UserId")
+                    b.Property<int>("UtilizadorFK")
                         .HasColumnType("int");
 
-                    b.Property<int>("ReviewId")
+                    b.Property<int>("ReviewFK")
                         .HasColumnType("int");
 
-                    b.HasKey("UserId", "ReviewId");
+                    b.HasKey("UtilizadorFK", "ReviewFK");
 
-                    b.HasIndex("ReviewId");
+                    b.HasIndex("ReviewFK");
 
                     b.ToTable("Favorites");
                 });
@@ -433,21 +441,21 @@ namespace Projeto.Migrations
 
             modelBuilder.Entity("Projeto.Models.Favorites", b =>
                 {
-                    b.HasOne("Projeto.Models.Reviews", "ReviewIdFK")
+                    b.HasOne("Projeto.Models.Reviews", "Review")
                         .WithMany("Favorites")
-                        .HasForeignKey("ReviewId")
+                        .HasForeignKey("ReviewFK")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Projeto.Models.Utilizadores", "UserIdFK")
+                    b.HasOne("Projeto.Models.Utilizadores", "Utilizador")
                         .WithMany("Favorites")
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("UtilizadorFK")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ReviewIdFK");
+                    b.Navigation("Review");
 
-                    b.Navigation("UserIdFK");
+                    b.Navigation("Utilizador");
                 });
 
             modelBuilder.Entity("Projeto.Models.Reviews", b =>
