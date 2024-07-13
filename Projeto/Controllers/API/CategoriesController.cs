@@ -16,9 +16,9 @@ namespace Projeto.Controllers.API
     public class CategoriesController : ControllerBase
     {
         public ApplicationDbContext _context;
-        public UserManager <IdentityUser> _userManager;
+        public UserManager<IdentityUser> _userManager;
         public SignInManager<IdentityUser> _signInManager;
-        public CategoriesController(ApplicationDbContext applicationDbContext, UserManager<IdentityUser> userManager,SignInManager<IdentityUser> signInManager)
+        public CategoriesController(ApplicationDbContext applicationDbContext, UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
         {
             _context = applicationDbContext;
             _userManager = userManager;
@@ -33,8 +33,8 @@ namespace Projeto.Controllers.API
             try
             {
 
-            var categoriesList = await _context.Categories.ToListAsync();
-            return Ok(categoriesList);
+                var categoriesList = await _context.Categories.ToListAsync();
+                return Ok(categoriesList);
             }
             catch
             {
@@ -59,6 +59,7 @@ namespace Projeto.Controllers.API
 
         [HttpPost]
         [Route("create-category")] //working
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateCategory()
         {
 
@@ -67,7 +68,11 @@ namespace Projeto.Controllers.API
                 var body = await reader.ReadToEndAsync();
                 dynamic data = JsonConvert.DeserializeObject(body);
 
-                if (data == null || data.name == null)
+                if (data == null )
+                {
+                    return BadRequest("Json Inválido, não enviou o nome da categoria");
+                }
+                if(data.name == null)
                 {
                     return BadRequest("Json Inválido, não enviou o nome da categoria");
                 }
@@ -86,6 +91,7 @@ namespace Projeto.Controllers.API
 
         [HttpPut]
         [Route("edit-category/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EditCategory([FromRoute] int id)
         {
             if (!CategoriesExists(id))
@@ -119,9 +125,9 @@ namespace Projeto.Controllers.API
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                 
-                        throw;
-                    
+
+                    throw;
+
                 }
 
                 return Ok(category);
@@ -130,6 +136,7 @@ namespace Projeto.Controllers.API
 
         [HttpDelete]
         [Route("delete-category/{id}")] //working
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteCategory([FromRoute] int id)
         {
             if (!CategoriesExists(id))
@@ -149,7 +156,7 @@ namespace Projeto.Controllers.API
             }
             catch
             {
-                
+
                 return BadRequest();
             }
 
@@ -191,7 +198,7 @@ namespace Projeto.Controllers.API
             {
 
             }
-            
+
 
             return Ok("ola");
         }

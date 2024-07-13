@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Projeto.Models;
 using System.Data;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
@@ -12,6 +13,17 @@ namespace Projeto.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         { }
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            /* Esta instrução importa tudo o que está pre-definido
+             * na super classe
+             */
+            base.OnModelCreating(builder);
+            //criar um role
+            builder.Entity<IdentityRole>().HasData(
+             new IdentityRole { Id = "1", Name = "Admin", NormalizedName = "ADMIN" }
+             );
+        }
 
         public DbSet<Utilizadores> Utilizadores { get; set; }
         public DbSet<Reviews> Reviews { get; set; }
@@ -19,7 +31,7 @@ namespace Projeto.Data
         public DbSet<Categories> Categories { get; set; }
         public DbSet<Comments> Comments { get; set; }
 
-        public List<int> GetReviewUsers(int? reviewId, int userId, bool isJustCollaborators)
+        public List<int> GetReviewUsers(int reviewId, int userId, bool isJustCollaborators)
         {
             var cnn = (SqlConnection)this.Database.GetDbConnection();
             if (cnn.State == ConnectionState.Closed)

@@ -106,7 +106,7 @@ namespace Projeto.Controllers
 
         // GET: Reviews/Details/5
         [AllowAnonymous] 
-        public async Task<IActionResult> Details(int? id, string source)
+        public async Task<IActionResult> Details(int id, string source)
         {
             var currentUserId = _userManager.GetUserId(User);
             var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
@@ -295,7 +295,7 @@ namespace Projeto.Controllers
         }
 
         // GET: Reviews/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(int id)
         {
             //obter o userId do utilizador atual
             var currentUserId = _userManager.GetUserId(User);
@@ -477,7 +477,7 @@ namespace Projeto.Controllers
         }
 
         // GET: Reviews/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int id)
         {
             //um utilizador que tenha a permissão de admin tem acesso a tudo
             if (!User.IsInRole("Admin"))

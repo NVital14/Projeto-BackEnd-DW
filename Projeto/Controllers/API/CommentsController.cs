@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Elfie.Serialization;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,7 @@ namespace Projeto.Controllers.API
         /// <returns>Mensagem de sucesso ou não sucesso</returns>
         [HttpPost]
         [Route("create-comment/{revId}")] //working
+        [Authorize]
         public async Task<IActionResult> SaveComments([FromRoute]int revId)
         {
             var currentUserId = _userManager.GetUserId(User);
@@ -41,6 +43,13 @@ namespace Projeto.Controllers.API
             if(util == null)
             {
                 return Forbid("Para fazer um comentário tem que estar na sua conta!");
+            }
+
+
+
+            if(!(_context.Reviews.Any(e => e.ReviewId == revId)))
+            {
+                return NotFound("Não existe essa review!");
             }
             using (var reader = new StreamReader(Request.Body))
             {
@@ -54,12 +63,6 @@ namespace Projeto.Controllers.API
 
                 try
                 {
-
-                    if (util == null)
-                    {
-                        //throw new Exception("Utilizador não encontrado.");
-                        return Json(new { success = false, message = "O utilizador não está registado, não pode inserir comentários" });
-                    }
                     Reviews r = _context.Reviews.AsNoTracking().FirstOrDefault(r => r.ReviewId == revId);
 
                     var c = new Comments
@@ -74,12 +77,12 @@ namespace Projeto.Controllers.API
                     _context.Comments.Add(c);
                     await _context.SaveChangesAsync();
 
-                    return Json(new { success = true, message = "Comentário enviado com sucesso!", userName = util.UserName });
+                    return Ok();
                 }
                 catch (Exception)
                 {
 
-                    return Json(new { success = false, message = "Ocorreu um erro ao enviar o comentário. Por favor, tente novamente mais tarde." });
+                    return BadRequest();
                 }
             }
 

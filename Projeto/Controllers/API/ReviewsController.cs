@@ -57,6 +57,7 @@ namespace Projeto.Controllers.API
         /// </summary>
         /// <param name="id">Id da review</param>
         /// <returns>Uma review</returns>
+        //[Authorize]
         [HttpGet]
         [Route("review-id-details/{id}")] //working
         public async Task<IActionResult> GetReviewById([FromRoute] int id)
@@ -256,8 +257,8 @@ namespace Projeto.Controllers.API
         [Route("edit-review/{id}")]
         public async Task<IActionResult> EditReview([FromRoute] int id, [FromForm] string title, [FromForm] string description, [FromForm] int rating, [FromForm] bool isShared, [FromForm] int categoryFK, [FromForm] IFormFile? imageReview, [FromForm] int[]? userIdsList)
         {
-            var currentUserId = _userManager.GetUserId(User);
-            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            //var currentUserId = _userManager.GetUserId(User);
+            //var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             var usersList = new List<Utilizadores>();
 
             // Verifificar se os campos obrigatórios estão preenchidos
@@ -376,6 +377,9 @@ namespace Projeto.Controllers.API
         [Route("delete-review/{id}")] 
         public async Task<IActionResult> DeleteReview([FromRoute] int id)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            //verifica se essa review existe
             if (!ReviewExists(id))
             {
                 return NotFound();
@@ -383,9 +387,11 @@ namespace Projeto.Controllers.API
             try
             {
                 var review = await _context.Reviews.FindAsync(id);
-                if (review != null)
-                {
-                    _context.Reviews.Remove(review);
+                var reviewUsers = _context.GetReviewUsers(id, util.Id, false);
+
+                //se o utilizador que está a apagar a review, não estiver nos utilizadores que têm acesso à review, então não pode realizar a ação
+                if(!reviewUsers.Contains(util.Id)) {
+                    return Forbid("Não pode realizar esta ação!");
                 }
 
                 //se a review tiver imagem
@@ -398,6 +404,11 @@ namespace Projeto.Controllers.API
                     System.IO.File.Delete(oldImagePath);
 
                 }
+                if (review != null)
+                {
+                    _context.Reviews.Remove(review);
+                }
+
                 await _context.SaveChangesAsync();
                 return Ok();
             }

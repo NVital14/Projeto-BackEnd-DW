@@ -24,7 +24,7 @@ namespace Projeto.Controllers
 
         public async Task<IActionResult> Index(int? categoryId)
         {
-            ViewData["CategoriesList"] = _context.Categories.AsNoTracking().OrderBy(u => u.Name).ToList();
+            ViewData["CategoriesList"] = await _context.Categories.AsNoTracking().OrderBy(u => u.Name).ToListAsync();
 
             if(categoryId == null)
             {
