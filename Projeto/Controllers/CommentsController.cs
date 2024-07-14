@@ -85,12 +85,14 @@ namespace Projeto.Controllers
                     //throw new Exception("Utilizador não encontrado.");
                     return Json(new { success = false, message = "O utilizador não está registado, não pode inserir comentários" });
                 }
+                //vai buscar a review em que foi feito o comentário
                 Reviews r = _context.Reviews.AsNoTracking().FirstOrDefault(r => r.ReviewId == revId);
                 coment.Comment = c;
                 coment.ReviewFK = revId;
 
                 coment.UtilizadorFK = util.Id;
 
+                //adiona à lista dos comments, na review, o novo comentário
                 r.Comments.Add(coment);
                 _context.Comments.Add(coment);
                 _context.SaveChanges();

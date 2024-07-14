@@ -29,7 +29,7 @@ namespace Projeto.Controllers.API
             _context = context;
             _userManager = userManager;
         }
-
+        //GET
         /// <summary>
         /// vai buscar os favoritos
         /// </summary>
@@ -64,9 +64,9 @@ namespace Projeto.Controllers.API
 
         }
 
-
+        //POST
         /// <summary>
-        /// Cria um comentário
+        /// Adiciona uma review como preferida
         /// </summary>
         /// <returns>Mensagem de sucesso ou não sucesso</returns>
         [HttpPost]
@@ -108,7 +108,7 @@ namespace Projeto.Controllers.API
 
         }
 
-
+        //DELETE
         /// <summary>
         /// Apaga um favorito
         /// </summary>

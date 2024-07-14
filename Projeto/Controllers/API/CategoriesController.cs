@@ -17,15 +17,17 @@ namespace Projeto.Controllers.API
     {
         public ApplicationDbContext _context;
         public UserManager<IdentityUser> _userManager;
-        public SignInManager<IdentityUser> _signInManager;
-        public CategoriesController(ApplicationDbContext applicationDbContext, UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
+        public CategoriesController(ApplicationDbContext applicationDbContext, UserManager<IdentityUser> userManager)
         {
             _context = applicationDbContext;
             _userManager = userManager;
-            _signInManager = signInManager;
         }
 
-
+        //GET
+        /// <summary>
+        /// Vai buscar todas as categorias
+        /// </summary>
+        /// <returns>Categorias</returns>
         [HttpGet]
         [Route("category")] //working
         public async Task<IActionResult> GetCategory()
@@ -42,26 +44,18 @@ namespace Projeto.Controllers.API
             }
         }
 
-        [HttpGet]
-        [Route("category-id/{id}")] //working
-        public async Task<IActionResult> GetCategoryById([FromRoute] int id)
-        {
-
-            if (!CategoriesExists(id))
-            {
-                return NotFound("A Categoria não foi encontrada");
-            }
-            var category = await _context.Categories
-                                          .FirstOrDefaultAsync(c => c.CategoryId == id);
-            return Ok(category);
-
-        }
-
+        //POST
+        /// <summary>
+        /// Criar uma nova categoria
+        /// </summary>
+        /// <returns>Mensagem de sucesso ou não sucesso</returns>
         [HttpPost]
         [Route("create-category")] //working
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateCategory()
         {
+            try
+            {
 
             using (var reader = new StreamReader(Request.Body))
             {
@@ -87,7 +81,19 @@ namespace Projeto.Controllers.API
 
                 return Ok(category);
             }
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
+
+        //PUT
+        /// <summary>
+        /// Edita uma categoria
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Mensagem de sucesso ou não sucesso</returns>
 
         [HttpPut]
         [Route("edit-category/{id}")]
@@ -134,6 +140,12 @@ namespace Projeto.Controllers.API
             }
         }
 
+        //DELETE
+        /// <summary>
+        /// Elimina uma categoria
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Mensagem de sucesso ou não sucesso</returns>
         [HttpDelete]
         [Route("delete-category/{id}")] //working
         [Authorize(Roles = "Admin")]
@@ -162,46 +174,7 @@ namespace Projeto.Controllers.API
 
         }
 
-        [HttpPost]
-        [Route("signInUser")]
-        public async Task<ActionResult> SignInUtilizadorAsync([FromQuery] string email, [FromQuery] string password)
-        {
-            /* IdentityUser identityUser = new IdentityUser();
-             identityUser.UserName = "aluno24872@ipt.pt";
-             identityUser.Email = "aluno24872@ipt.pt";
 
-             identityUser.NormalizedUserName = identityUser.UserName.ToUpper();
-             identityUser.NormalizedEmail = identityUser.UserName.ToUpper();
-
-             identityUser.PasswordHash = null;
-             identityUser.Id = Guid.NewGuid().ToString();
-
-
-             _userManager.CreateAsync(identityUser);
-
-             _context.SaveChanges();*/
-
-            try
-            {
-                IdentityUser user = _userManager.FindByEmailAsync(email).Result;
-
-                if (user != null)
-                {
-                    PasswordVerificationResult passWorks = new PasswordHasher<IdentityUser>().VerifyHashedPassword(null, user.PasswordHash, password);
-                    if (passWorks.Equals(PasswordVerificationResult.Success))
-                    {
-                        await _signInManager.SignInAsync(user, false);
-                    }
-                }
-            }
-            catch
-            {
-
-            }
-
-
-            return Ok("ola");
-        }
 
         private bool CategoriesExists(int id)
         {

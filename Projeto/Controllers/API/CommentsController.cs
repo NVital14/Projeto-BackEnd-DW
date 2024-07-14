@@ -28,7 +28,7 @@ namespace Projeto.Controllers.API
             _context = context;
             _userManager = userManager;
         }
-
+        //POST
         /// <summary>
         /// Cria um comentário
         /// </summary>

@@ -12,29 +12,24 @@ namespace Projeto.Controllers.API
     {
 
         /// <summary>
-        /// referência à BD do projeto
-        /// </summary>
-        private readonly ApplicationDbContext _context;
-
-        /// <summary>
         /// objeto que contém os dados do Servidor
         /// </summary>
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        /// <summary>
-        /// objeto para interagir com os dados da pessoa autenticada
-        /// </summary>
-        private readonly UserManager<IdentityUser> _userManager;
 
-        public ImageController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment, UserManager<IdentityUser> userManager)
+        public ImageController(IWebHostEnvironment webHostEnvironment)
         {
-            _context = context;
+        
             _webHostEnvironment = webHostEnvironment;
-            _userManager = userManager;
+  
         }
 
 
-
+        /// <summary>
+        /// Vai buscar a imagem armazenada no servidor
+        /// </summary>
+        /// <param name="imageName">nome da imagem</param>
+        /// <returns>ficheiro da imagem</returns>
         [HttpGet("{imageName}")]
         public IActionResult GetImage([FromRoute]string imageName)
         {
@@ -52,6 +47,7 @@ namespace Projeto.Controllers.API
             return File(imageFileStream, mimeType);
         }
 
+        //vai buscar a extensão da imagem
         private string GetMimeType(string fileExtension)
         {
             return fileExtension switch

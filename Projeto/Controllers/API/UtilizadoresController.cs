@@ -23,6 +23,87 @@ namespace Projeto.Controllers.API
             _signInManager = signInManager;
         }
 
+        //GETS
+        /// <summary>
+        /// Verifica se o user está autenticado
+        /// </summary>
+        /// <returns>boolean</returns>
+        [HttpGet]
+        [Route("is-authenticaded")]
+        public async Task<IActionResult> IsUserAuthenticated()
+        {
+            try
+            {
+                bool isAuthenticated = User.Identity.IsAuthenticated;
+
+                if (isAuthenticated)
+                {
+                    return Ok(true);
+                }
+                else
+                {
+                    return Ok(false);
+                }
+            }
+            catch
+            {
+                return BadRequest();
+            }
+
+        }
+
+        /// <summary>
+        /// Verifica se o user é admin
+        /// </summary>
+        /// <returns>boolean</returns>
+        [HttpGet]
+        [Route("is-admin")]
+        public async Task<IActionResult> IsUserAdmin()
+        {
+            try
+            {
+                bool isAd = User.IsInRole("Admin");
+
+                if (isAd)
+                {
+                    return Ok(true);
+                }
+                else
+                {
+                    return Ok(false);
+                }
+            }
+            catch
+            {
+                return BadRequest();
+            }
+
+        }
+
+
+        /// <summary>
+        /// Via buscar todos os utilizadores
+        /// </summary>
+        /// <returns>lista de utilizadores</returns>
+        [HttpGet]
+        [Route("users")]
+        public async Task<IActionResult> GetUsers()
+        {
+            try
+            {
+                var currentUserId = _userManager.GetUserId(User);
+                var users = await _context.Utilizadores.Where(u => u.UserId != currentUserId)
+                                                         .OrderBy(u => u.UserName)
+                                                         .ToListAsync();
+                return Ok(users);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+
+        }
+        //POSTS
         /// <summary>
         /// Cria utilizador
         /// </summary>
@@ -202,85 +283,7 @@ namespace Projeto.Controllers.API
 
         }
 
-        /// <summary>
-        /// Verifica se o user está autenticado
-        /// </summary>
-        /// <returns>boolean</returns>
-        [HttpGet]
-        [Route("is-authenticaded")]
-        public async Task<IActionResult> IsUserAuthenticated()
-        {
-            try
-            {
-                bool isAuthenticated = User.Identity.IsAuthenticated;
-
-                if (isAuthenticated)
-                {
-                    return Ok(true);
-                }
-                else
-                {
-                    return Ok(false);
-                }
-            }
-            catch
-            {
-                return BadRequest();
-            }
-
-        }
-
-        /// <summary>
-        /// Verifica se o user é admin
-        /// </summary>
-        /// <returns>boolean</returns>
-        [HttpGet]
-        [Route("is-admin")]
-        public async Task<IActionResult> IsUserAdmin()
-        {
-            try
-            {
-                bool isAd = User.IsInRole("Admin");
-
-                if (isAd)
-                {
-                    return Ok(true);
-                }
-                else
-                {
-                    return Ok(false);
-                }
-            }
-            catch
-            {
-                return BadRequest();
-            }
-
-        }
-
-
-        /// <summary>
-        /// Via buscar todos os utilizadores
-        /// </summary>
-        /// <returns>lista de utilizadores</returns>
-        [HttpGet]
-        [Route("users")]
-        public async Task<IActionResult> GetUsers()
-        {
-            try
-            {
-                var currentUserId = _userManager.GetUserId(User);
-                var users = await _context.Utilizadores.Where(u => u.UserId != currentUserId)
-                                                         .OrderBy(u => u.UserName)
-                                                         .ToListAsync();
-                return Ok(users);
-            }
-            catch
-            {
-                return BadRequest();
-            }
-
-        }
+        
 
     }
 }

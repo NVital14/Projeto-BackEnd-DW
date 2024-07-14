@@ -40,25 +40,12 @@ namespace Projeto.Controllers.API
             _userManager = userManager;
         }
 
-        /// <summary>
-        /// Vai buscar todas as reviews
-        /// </summary>
-        /// <returns>Lista de reviews</returns>
-        [HttpGet]
-        [Route("reviews-user")] //working
-        public async Task<IActionResult> GetReview()
-        {
-            
-            var reviewsList = await _context.Reviews.ToListAsync();
-            return Ok(reviewsList);
-        }
-
+        //GETS
         /// <summary>
         /// Vai buscar apenas uma review com base no id
         /// </summary>
         /// <param name="id">Id da review</param>
         /// <returns>Uma review</returns>
-        //[Authorize]
         [HttpGet]
         [Route("review-id-details/{id}")] //working
         public async Task<IActionResult> GetReviewById([FromRoute] int id)
@@ -115,7 +102,6 @@ namespace Projeto.Controllers.API
 
 
 
-
         /// <summary>
         /// Vai buscar as reviews paginadas
         /// </summary>
@@ -126,40 +112,44 @@ namespace Projeto.Controllers.API
         [Route("reviews-paginated")]
         public async Task<IActionResult> GetReviewsPaginated([FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] bool byUser)
         {
-            
-            List <Reviews> reviews;
+
+            List<Reviews> reviews;
             var totalRecords = 0;
-            if (!byUser)
+            try
             {
-             reviews = await _context.Reviews
-                                        .Skip((pageNumber - 1) * pageSize)
-                                        .Take(pageSize)
-                                        .ToListAsync();
 
-             totalRecords = await _context.Reviews.CountAsync();
-            }
-            else
-            {
-                var currentUserId = _userManager.GetUserId(User);
-                var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+                if (!byUser)
+                {
+                    reviews = await _context.Reviews
+                                           .Skip((pageNumber - 1) * pageSize)
+                                           .Take(pageSize)
+                                           .ToListAsync();
 
-                if(util == null) {
-                    return Forbid();
+                totalRecords = await _context.Reviews.CountAsync();
                 }
-                reviews = await _context.Reviews
-                                 .Include(r => r.Users) // Inclui os users
-                                 .Where(r => r.Users.Any(u => u.Id == util.Id))
-                                 .Skip((pageNumber - 1) * pageSize)
-                                 .Take(pageSize)
-                                 .ToListAsync();
-                totalRecords = await _context.Reviews.Where(r => r.Users.Any(u => u.Id == util.Id)).CountAsync();
-            }
+                else
+                {
+                    var currentUserId = _userManager.GetUserId(User);
+                    var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
 
-            foreach(var r in reviews)
+                    if (util == null)
+                    {
+                        return Forbid();
+                    }
+                    reviews = await _context.Reviews
+                                     .Include(r => r.Users) // Inclui os users
+                                     .Where(r => r.Users.Any(u => u.Id == util.Id))
+                                     .Skip((pageNumber - 1) * pageSize)
+                                     .Take(pageSize)
+                                     .ToListAsync();
+                    totalRecords = await _context.Reviews.Where(r => r.Users.Any(u => u.Id == util.Id)).CountAsync();
+                }
+
+                foreach (var r in reviews)
             {
                 var comments = await _context.Comments.Where(c => c.ReviewFK == r.ReviewId).ToListAsync();
 
-                foreach(var c in comments)
+                foreach (var c in comments)
                 {
                     var u = await _context.Utilizadores.Where(u => u.Id == c.UtilizadorFK).FirstOrDefaultAsync();
                     c.Utilizador = u;
@@ -179,7 +169,13 @@ namespace Projeto.Controllers.API
 
 
             return Ok(response);
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
+
 
 
         /// <summary>
@@ -240,6 +236,7 @@ namespace Projeto.Controllers.API
                
         }
 
+        //POST
         /// <summary>
         /// Cria uma review
         /// </summary>
@@ -319,6 +316,8 @@ namespace Projeto.Controllers.API
             return BadRequest("Não deu!");
 
         }
+
+        //PUT
         [Authorize]
         [HttpPut]
         [Route("edit-review/{id}")]
@@ -435,6 +434,7 @@ namespace Projeto.Controllers.API
             return Ok();
         }
 
+        //DELETE
         /// <summary>
         /// Elimina uma review
         /// </summary>
