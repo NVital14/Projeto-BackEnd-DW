@@ -170,7 +170,7 @@ namespace Projeto.Controllers.API
                             await _context.SaveChangesAsync();
                             // ***********************************
 
-                            return Ok("Usuário criado com sucesso");
+                            return Ok("Utilizador criado com sucesso");
                         }
                         catch (Exception e)
                         {

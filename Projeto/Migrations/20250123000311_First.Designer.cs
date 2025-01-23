@@ -12,8 +12,8 @@ using Projeto.Data;
 namespace Projeto.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240713132940_FirstAfterAllChanges")]
-    partial class FirstAfterAllChanges
+    [Migration("20250123000311_First")]
+    partial class First
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -296,6 +296,63 @@ namespace Projeto.Migrations
                     b.ToTable("Favorites");
                 });
 
+            modelBuilder.Entity("Projeto.Models.Items", b =>
+                {
+                    b.Property<int>("ItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemId"));
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Image")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsChecked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ListFK")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(7, 2)");
+
+                    b.HasKey("ItemId");
+
+                    b.HasIndex("ListFK");
+
+                    b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("Projeto.Models.Lists", b =>
+                {
+                    b.Property<int>("ListId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ListId"));
+
+                    b.Property<string>("ListName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UtilizadorFK")
+                        .HasColumnType("int");
+
+                    b.HasKey("ListId");
+
+                    b.HasIndex("UtilizadorFK");
+
+                    b.ToTable("Lists");
+                });
+
             modelBuilder.Entity("Projeto.Models.Reviews", b =>
                 {
                     b.Property<int>("ReviewId")
@@ -454,6 +511,28 @@ namespace Projeto.Migrations
                         .IsRequired();
 
                     b.Navigation("Review");
+
+                    b.Navigation("Utilizador");
+                });
+
+            modelBuilder.Entity("Projeto.Models.Items", b =>
+                {
+                    b.HasOne("Projeto.Models.Lists", "List")
+                        .WithMany()
+                        .HasForeignKey("ListFK")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("List");
+                });
+
+            modelBuilder.Entity("Projeto.Models.Lists", b =>
+                {
+                    b.HasOne("Projeto.Models.Utilizadores", "Utilizador")
+                        .WithMany()
+                        .HasForeignKey("UtilizadorFK")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Utilizador");
                 });

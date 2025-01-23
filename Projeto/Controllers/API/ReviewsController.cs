@@ -121,6 +121,7 @@ namespace Projeto.Controllers.API
                 if (!byUser)
                 {
                     reviews = await _context.Reviews
+                                           .Where(r => r.IsShared == true)
                                            .Skip((pageNumber - 1) * pageSize)
                                            .Take(pageSize)
                                            .ToListAsync();
@@ -137,11 +138,45 @@ namespace Projeto.Controllers.API
                         return Forbid();
                     }
                     reviews = await _context.Reviews
-                                     .Include(r => r.Users) // Inclui os users
+                                      //.Include(r => r.Users) // Inclui os users
                                      .Where(r => r.Users.Any(u => u.Id == util.Id))
                                      .Skip((pageNumber - 1) * pageSize)
                                      .Take(pageSize)
                                      .ToListAsync();
+
+
+                    foreach(var r in reviews)
+                    {
+                        List<int> usersIdSaved = _context.GetReviewUsers(r.ReviewId, util.Id, true);
+                        if (usersIdSaved != null)
+                        {
+                            var usersList = new List<Utilizadores>();
+                            foreach (int usId in usersIdSaved)
+                            {
+                                //ir buscar o utilizador com o id igual ao do id do novo colaborador
+                                var user = _context.Utilizadores.FirstOrDefault(u => u.Id == usId);
+                                if (user != null)
+                                {
+                                    usersList.Add(user);
+                                }
+
+                           
+                                
+                                else
+                                {
+                                    return BadRequest("Houve um erro a guardar os colaboradores");
+                                }
+                                //guarda a lista de colaboradores na lista de users da review
+                                r.Users = usersList;
+
+                            }
+
+                        }
+
+
+                    }
+
+
                     totalRecords = await _context.Reviews.Where(r => r.Users.Any(u => u.Id == util.Id)).CountAsync();
                 }
 

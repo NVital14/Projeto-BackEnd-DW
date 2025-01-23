@@ -30,6 +30,8 @@ namespace Projeto.Data
         public DbSet<Favorites> Favorites { get; set; }
         public DbSet<Categories> Categories { get; set; }
         public DbSet<Comments> Comments { get; set; }
+        public DbSet<Lists> Lists { get; set; }
+        public DbSet<Items> Items { get; set; }
 
         public List<int> GetReviewUsers(int reviewId, int userId, bool isJustCollaborators)
         {
@@ -89,6 +91,7 @@ namespace Projeto.Data
 
             //return this.Utilizadores.FromSqlRaw(query, new SqlParameter("@ReviewId", reviewId)).ToList();
         }
+
 
     }
 }

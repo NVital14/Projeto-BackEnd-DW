@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Projeto.Migrations
 {
     /// <inheritdoc />
-    public partial class FirstAfterAllChanges : Migration
+    public partial class First : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -208,6 +208,26 @@ namespace Projeto.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Lists",
+                columns: table => new
+                {
+                    ListId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ListName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UtilizadorFK = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Lists", x => x.ListId);
+                    table.ForeignKey(
+                        name: "FK_Lists_Utilizadores_UtilizadorFK",
+                        column: x => x.UtilizadorFK,
+                        principalTable: "Utilizadores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Comments",
                 columns: table => new
                 {
@@ -282,6 +302,30 @@ namespace Projeto.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Items",
+                columns: table => new
+                {
+                    ItemId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ItemName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Image = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    IsChecked = table.Column<bool>(type: "bit", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(7,2)", nullable: true),
+                    Amount = table.Column<int>(type: "int", nullable: false),
+                    ListFK = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Items", x => x.ItemId);
+                    table.ForeignKey(
+                        name: "FK_Items_Lists_ListFK",
+                        column: x => x.ListFK,
+                        principalTable: "Lists",
+                        principalColumn: "ListId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "AspNetRoles",
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
@@ -342,6 +386,16 @@ namespace Projeto.Migrations
                 column: "ReviewFK");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Items_ListFK",
+                table: "Items",
+                column: "ListFK");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Lists_UtilizadorFK",
+                table: "Lists",
+                column: "UtilizadorFK");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Reviews_CategoryFK",
                 table: "Reviews",
                 column: "CategoryFK");
@@ -377,6 +431,9 @@ namespace Projeto.Migrations
                 name: "Favorites");
 
             migrationBuilder.DropTable(
+                name: "Items");
+
+            migrationBuilder.DropTable(
                 name: "ReviewsUtilizadores");
 
             migrationBuilder.DropTable(
@@ -384,6 +441,9 @@ namespace Projeto.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Lists");
 
             migrationBuilder.DropTable(
                 name: "Reviews");
