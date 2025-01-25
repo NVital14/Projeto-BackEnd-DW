@@ -30,12 +30,12 @@ namespace Projeto.Controllers.API
         /// <returns>Mensagem de sucesso ou não sucesso</returns>
         [HttpPost]
         [Route("create-list")] //working
-       // [Authorize]
+        [Authorize]
         public async Task<IActionResult> CreateList()
         {
             var currentUserId = _userManager.GetUserId(User);
-            //var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
-            var util = _context.Utilizadores.FirstOrDefault(u => u.Id == 1);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+            //var util = _context.Utilizadores.FirstOrDefault(u => u.Id == 1);
             try
             {
                 using (var reader = new StreamReader(Request.Body))
@@ -82,11 +82,12 @@ namespace Projeto.Controllers.API
         /// <returns>Mensagem de sucesso ou não sucesso</returns>
         [HttpGet]
         [Route("get-lists")] //working
-       // [Authorize]
+        [Authorize]
         public async Task<IActionResult> GetLists()
         {
             //var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
-            var util = _context.Utilizadores.FirstOrDefault(u => u.Id == 1);
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             List<Lists> lists;
             try
             {
@@ -113,12 +114,23 @@ namespace Projeto.Controllers.API
 
         [HttpPut]
         [Route("edit-list/{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> EditList([FromRoute] int id)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
+
+            
+             
             if (!ListExists(id))
             {
                 return NotFound();
+            }
+
+            var l = _context.Lists.FirstOrDefault(l => l.ListId == id);
+            if(l.UtilizadorFK != util.Id)
+            {
+                return BadRequest("Só pode editar as suas próprias listas.");
             }
             using (var reader = new StreamReader(Request.Body))
             {
@@ -135,7 +147,7 @@ namespace Projeto.Controllers.API
                 {
                     ListName = (string)data.name,
                     ListId = (int)data.listId,
-                    UtilizadorFK = 1 //mudar depois para o user mesmo
+                    UtilizadorFK = util.Id
                     };
 
                 if (id != list.ListId)
@@ -164,14 +176,21 @@ namespace Projeto.Controllers.API
         /// </summary>
         /// <param name="id"></param>
         /// <returns>Mensagem de sucesso ou não sucesso</returns>
+        [Authorize]
         [HttpDelete]
         [Route("delete-list/{id}")] //working
-        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteList([FromRoute] int id)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            var util = _context.Utilizadores.FirstOrDefault(u => u.UserId == currentUserId);
             if (!ListExists(id))
             {
                 return NotFound();
+            }
+            var l = _context.Lists.FirstOrDefault(l => l.ListId == id);
+            if (l.UtilizadorFK != util.Id)
+            {
+                return BadRequest("Só pode eliminar as suas próprias listas.");
             }
             try
             {

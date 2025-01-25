@@ -188,6 +188,58 @@ namespace Projeto.Controllers.API
             }
             
         }
+        /*
+                /// <summary>
+                /// Entrar na conta
+                /// </summary>
+                /// <returns>Status Code</returns>
+                [HttpPost]
+                [Route("sign-in-user")]
+                public async Task<IActionResult> SignInUser()
+                {
+                    using (var reader = new StreamReader(Request.Body))
+                    {
+                        var body = await reader.ReadToEndAsync();
+                        dynamic data = JsonConvert.DeserializeObject(body);
+                        if (data == null)
+                        {
+                            return BadRequest("Json Inválido, não enviou  dados");
+                        }
+                        if (data.email == null)
+                        {
+                            return BadRequest("Json Inválido, não enviou o email");
+                        }
+
+                        if (data.password == null)
+                        {
+                            return BadRequest("Json Inválido, não enviou a password ");
+                        }
+                        try
+                        {
+                            var email = (string)data.email;
+                            var password = (string)data.password;
+                            IdentityUser user = _userManager.FindByEmailAsync(email).Result;
+
+                            if (user != null)
+                            {
+                                PasswordVerificationResult passWorks = new PasswordHasher<IdentityUser>().VerifyHashedPassword(null, user.PasswordHash, password);
+                                if (passWorks.Equals(PasswordVerificationResult.Success))
+                                {
+                                    await _signInManager.SignInAsync(user, false);
+
+                                    return Ok("O utlizador entrou na conta");
+                                }
+                            }
+                            return NotFound("O utilizador não foi encontrado");
+                        }
+                        catch (Exception e)
+                        {
+                            return BadRequest($"Erro ao entrar na conta: {e.Message}");
+
+                        }
+                    }
+
+                }*/
 
         /// <summary>
         /// Entrar na conta
@@ -220,13 +272,22 @@ namespace Projeto.Controllers.API
                     var password = (string)data.password;
                     IdentityUser user = _userManager.FindByEmailAsync(email).Result;
 
+                    Utilizadores u = await _context.Utilizadores.FirstOrDefaultAsync(u => u.UserId == user.Id);
+                                                  
+
                     if (user != null)
                     {
                         PasswordVerificationResult passWorks = new PasswordHasher<IdentityUser>().VerifyHashedPassword(null, user.PasswordHash, password);
                         if (passWorks.Equals(PasswordVerificationResult.Success))
                         {
                             await _signInManager.SignInAsync(user, false);
-                            return Ok("O utlizador entrou na conta");
+
+                            return Ok(new
+                            {
+                                message = "Login feito com sucesso",
+                                userEmail = (string)data.email,
+                                userName = u.UserName
+                            });
                         }
                     }
                     return NotFound("O utilizador não foi encontrado");

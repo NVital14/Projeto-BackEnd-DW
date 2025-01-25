@@ -39,7 +39,7 @@ namespace Projeto.Controllers.API
         /// <param name="itemImage"></param>
 
         /// <returns>A review que foi criada</returns>
-       // [Authorize]
+        [Authorize]
         [HttpPost]
         [Route("create-item/{listId}")]
         public async Task<IActionResult> CreateItem([FromRoute] int listId, [FromForm] string? itemName, [FromForm] IFormFile? itemImage, [FromForm] decimal? price, [FromForm] int amount, [FromForm] bool isChecked)
@@ -100,7 +100,8 @@ namespace Projeto.Controllers.API
         /// Vai buscar os items da lista
         /// </summary>
         /// <param name="listId">Id da lista</param>
-        /// <returns>Uma review</returns>
+        /// <returns>Uma lista de items</returns>
+        [Authorize]
         [HttpGet]
         [Route("get-list-items/{listId}")] //working
         public async Task<IActionResult> GetItemsByListId([FromRoute] int listId)
@@ -121,7 +122,7 @@ namespace Projeto.Controllers.API
 
         }
         //PUT
-        //[Authorize]
+        [Authorize]
         [HttpPut]
         [Route("edit-item/{id}")]
         public async Task<IActionResult> EditItem([FromRoute] int id, [FromForm] string? itemName, [FromForm] IFormFile? itemImage, [FromForm] decimal? price, [FromForm] int amount, [FromForm] bool isChecked)
@@ -196,6 +197,7 @@ namespace Projeto.Controllers.API
         /// </summary>
         /// <param name="id"></param>
         /// <returns>Estado</returns>
+        [Authorize]
         [HttpDelete]
         [Route("delete-item/{id}")]
         public async Task<IActionResult> DeleteItem([FromRoute] int id)
