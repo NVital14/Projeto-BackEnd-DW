@@ -344,7 +344,58 @@ namespace Projeto.Controllers.API
 
         }
 
-        
+        /// <summary>
+        /// Elimina um utilizador
+        /// </summary>
+        /// <param name="id">ID do utilizador</param>
+        /// <returns>Status Code</returns>
+        [HttpDelete]
+        [Route("delete-user/{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            try
+            {
+                //ir buscar o userid do utilizador atual
+                var currentUserId = _userManager.GetUserId(User); ;
+                
+                if (currentUserId == null)
+                {
+                    return NotFound(new { message = "O utilizador não foi encontrado." });
+                }
+                else
+                {
+                    //vai buscar os dados do utilizador
+                    var util = await _context.Utilizadores.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+
+                    if (util != null && util.UserId != null)
+                    {
+                        //elimina o utilizador da tabela Utilizadores
+                        _context.Utilizadores.Remove(util);
+                        await _context.SaveChangesAsync();
+
+                        // ir buscar o utilizador na tabela Identity
+                        var identityUser = await _userManager.FindByIdAsync(currentUserId);
+                        // eliminar o utilizador da Identity
+                        var result = await _userManager.DeleteAsync(identityUser);
+                        if (!result.Succeeded)
+                        {
+                            return BadRequest(new { message = "Erro ao eliminar o utilizador.", errors = result.Errors });
+                        }
+                    }
+
+                    
+                }
+
+                return Ok(new { message = "Utilizador eliminado com sucesso." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Erro ao eliminar o utilizador.", details = ex.Message });
+            }
+        }
+
+
+
 
     }
 }
