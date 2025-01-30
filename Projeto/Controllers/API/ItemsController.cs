@@ -140,7 +140,7 @@ namespace Projeto.Controllers.API
 
             if (amount <= 0)
             {
-                return BadRequest("A qauntidade tem que ser um valor maior que 0!");
+                return BadRequest("A quantidade tem que ser um valor maior que 0!");
             }
 
             
@@ -184,6 +184,42 @@ namespace Projeto.Controllers.API
                 {
 
                     return BadRequest("Houve um erro a editar o item");
+                }
+            }
+
+
+            return Ok();
+        }
+
+        //PUT
+        [Authorize]
+        [HttpPut]
+        [Route("edit-is-checked/{id}")]
+        public async Task<IActionResult> EditIsChecked([FromRoute] int id)
+        {
+            //verificar se o item existe
+            if (!ItemExists(id))
+            {
+                return BadRequest("Não existe nenhum item com este id!");
+            }
+            var item = await _context.Items.Where(i => i.ItemId == id).FirstOrDefaultAsync();
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // atualizar os campos básicos
+                    item.IsChecked = !item.IsChecked;
+
+                    _context.Entry(item).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+                }
+
+
+                catch (DbUpdateConcurrencyException e)
+                {
+
+                    return BadRequest("Houve um erro a editar ao fazer check ou uncheck no item");
                 }
             }
 
